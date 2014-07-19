@@ -40,12 +40,14 @@ and your work is done. AssetPicker does it all for you.
 * Provides all the albums browsing within one screen.
 * Provides Camera option for new photo / video capture.
 
-## How It Looks - iPad
+## iPad Portrait
 ![iPadPortrait] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPadPortrait.png)
+## iPad Landscape
 ![iPadLandscape] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPadLandscape.png)
 
-## How It Looks - iPhone
+## iPhone Portrait
 ![iPhonePortrait] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPhonePortrait.png)
+## iPhone Landscape
 ![iPhoneLandscape] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPhoneLandscape.png)
     
 ## Demo App
