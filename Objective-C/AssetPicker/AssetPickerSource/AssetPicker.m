@@ -1244,7 +1244,7 @@ typedef enum
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
     
-    dispatch_async(assetWriteQueue, ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
         if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
         {
             UIImageWriteToSavedPhotosAlbum(info[UIImagePickerControllerOriginalImage],
