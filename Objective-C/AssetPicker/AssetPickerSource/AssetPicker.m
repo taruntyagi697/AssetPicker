@@ -72,6 +72,8 @@
 #define AssetWriteDirectoryPath \
 [NSHomeDirectory() stringByAppendingFormat:@"/Documents/AssetPickerTemp"]
 
+#define CameraReturnedAssetWritten @"CameraReturnedAssetWritten"
+
 // External Variables' DEFINITIONS
 const NSString* APOriginalAsset = @"APOriginalAsset";
 const NSString* APAssetContentsURL = @"APAssetContentsURL";
@@ -631,6 +633,61 @@ typedef enum
     }
 }
 
+-(void)refreshSavedPhotosAlbumAssets
+{
+    [AssetsLibrary enumerateGroupsWithTypes:ALAssetsGroupSavedPhotos
+                                 usingBlock:^(ALAssetsGroup* group, BOOL* stop)
+     {
+         if(group != nil)
+         {
+             if([group numberOfAssets] > [storedAssets[0][AlbumAssets] count])
+             {
+                 [group enumerateAssetsWithOptions:NSEnumerationReverse
+                                        usingBlock:^(ALAsset* result, NSUInteger index, BOOL* stop)
+                  {
+                      if(result != nil)
+                      {
+                          *stop = YES;
+                          [selectedAssets addAsset:result];
+                          [storedAssets[0][AlbumAssets] addObject:result];
+                          
+                          NSString* assetType = [result valueForProperty:ALAssetPropertyType];
+                          
+                          if((filterType == APFilterTypeAll) ||
+                             ([assetType isEqualToString:ALAssetTypePhoto] && filterType == APFilterTypePhotos) ||
+                             ([assetType isEqualToString:ALAssetTypeVideo] && filterType == APFilterTypeVideos))
+                          {
+                              [availableAssets[0][AlbumAssets] addObject:result];
+                              
+                              NSIndexPath* indexPath =
+                              [NSIndexPath indexPathForItem:[availableAssets[0][AlbumAssets] count]-1 inSection:0];
+                              [availableAssetsClctnVw insertItemsAtIndexPaths:@[indexPath]];
+                              
+                              double delayInSeconds = 0.75f;
+                              dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+                              dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+                                  APAvailableAssetsCollectionItem* item = (APAvailableAssetsCollectionItem*)
+                                  [availableAssetsClctnVw cellForItemAtIndexPath:indexPath];
+                                  item.selected = YES;
+                                  [NotificationCenter postNotificationName:ItemTappedNotification object:item];
+                              });
+                          }
+                      }
+                  }];
+             }
+             else
+             {
+                 [self performSelector:_cmd withObject:nil afterDelay:2.0f];
+             }
+         }
+     }
+                               failureBlock:^(NSError* error)
+     {
+         APLog(@"AssetLibrary Group 'SavedPhotos' couldn't be browsed at the time."
+               " Reason :- %@", error.localizedDescription);
+     }];
+}
+
 #pragma mark
 #pragma mark<UIResponder Methods>
 #pragma mark
@@ -1185,50 +1242,22 @@ typedef enum
 
 -(void)imagePickerController:(UIImagePickerController*)picker didFinishPickingMediaWithInfo:(NSDictionary*)info
 {
-    [AssetsLibrary assetForURL:info[UIImagePickerControllerReferenceURL]
-                   resultBlock:^(ALAsset* asset)
-     {
-         if(asset != nil)
-         {
-             [selectedAssets addAsset:asset];
-             [storedAssets[0][AlbumAssets] addObject:asset];
-             
-             NSMutableArray* availableSavedPhotosAlbumAssets = availableAssets[0][AlbumAssets];
-             NSString* assetType = [asset valueForProperty:ALAssetPropertyType];
-             if(filterType == APFilterTypeAll)
-             {
-                 [availableSavedPhotosAlbumAssets addObject:asset];
-             }
-             else if(filterType == APFilterTypePhotos &&
-                     [assetType isEqualToString:ALAssetTypePhoto])
-             {
-                 [availableSavedPhotosAlbumAssets addObject:asset];
-             }
-             else if(filterType == APFilterTypeVideos &&
-                     [assetType isEqualToString:ALAssetTypeVideo])
-             {
-                 [availableSavedPhotosAlbumAssets addObject:asset];
-             }
-             
-             NSIndexPath* indexPath =
-             [NSIndexPath indexPathForItem:[availableAssets[0][AlbumAssets] count]-1 inSection:0];
-             [availableAssetsClctnVw insertItemsAtIndexPaths:@[indexPath]];
-             
-             double delayInSeconds = 0.75f;
-             dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-             dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-                 APAvailableAssetsCollectionItem* item = (APAvailableAssetsCollectionItem*)
-                 [availableAssetsClctnVw cellForItemAtIndexPath:indexPath];
-                 item.selected = YES;
-                 [NotificationCenter postNotificationName:ItemTappedNotification object:item];
-             });
-         }
-     }
-                  failureBlock:^(NSError* error)
-     {
-         APLog(@"Couldn't get Asset from AssetsLibrary. Reason :- %@",
-               error.localizedDescription);
-     }];
+    if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
+    {
+        UIImageWriteToSavedPhotosAlbum(info[UIImagePickerControllerOriginalImage],
+                                       self, @selector(refreshSavedPhotosAlbumAssets),
+                                       CameraReturnedAssetWritten);
+    }
+    else
+    {
+        NSString* videoPath = ((NSURL*)info[UIImagePickerControllerMediaURL]).path;
+        if(UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath))
+        {
+            UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self,
+                                                @selector(refreshSavedPhotosAlbumAssets),
+                                                CameraReturnedAssetWritten);
+        }
+    }
 }
 
 -(void)imagePickerControllerDidCancel:(UIImagePickerController*)picker
