@@ -389,6 +389,8 @@ typedef enum
     });
     
     [self fetchAvailableAssets];
+    
+    assetWriteQueue = dispatch_queue_create([AssetWriteQueue UTF8String], NULL);
 }
 
 -(void)checkStatusBarHidePermission
@@ -861,8 +863,6 @@ typedef enum
 
 -(void)writeAssetsAndPrepareURLs
 {
-    assetWriteQueue = dispatch_queue_create([AssetWriteQueue UTF8String], NULL);
-    
     requestedAssets = [@[] mutableCopy];
     
     for(ALAsset* asset in selectedAssets)
@@ -1242,22 +1242,26 @@ typedef enum
 
 -(void)imagePickerController:(UIImagePickerController*)picker didFinishPickingMediaWithInfo:(NSDictionary*)info
 {
-    if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
-    {
-        UIImageWriteToSavedPhotosAlbum(info[UIImagePickerControllerOriginalImage],
-                                       self, @selector(refreshSavedPhotosAlbumAssets),
-                                       CameraReturnedAssetWritten);
-    }
-    else
-    {
-        NSString* videoPath = ((NSURL*)info[UIImagePickerControllerMediaURL]).path;
-        if(UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath))
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    
+    dispatch_async(assetWriteQueue, ^{
+        if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
         {
-            UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self,
-                                                @selector(refreshSavedPhotosAlbumAssets),
-                                                CameraReturnedAssetWritten);
+            UIImageWriteToSavedPhotosAlbum(info[UIImagePickerControllerOriginalImage],
+                                           self, @selector(refreshSavedPhotosAlbumAssets),
+                                           CameraReturnedAssetWritten);
         }
-    }
+        else
+        {
+            NSString* videoPath = ((NSURL*)info[UIImagePickerControllerMediaURL]).path;
+            if(UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath))
+            {
+                UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self,
+                                                    @selector(refreshSavedPhotosAlbumAssets),
+                                                    CameraReturnedAssetWritten);
+            }
+        }
+    });
 }
 
 -(void)imagePickerControllerDidCancel:(UIImagePickerController*)picker
