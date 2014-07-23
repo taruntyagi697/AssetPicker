@@ -41,10 +41,15 @@
 #define ScreenWidth  ScreenBounds.size.width
 #define ScreenHeight ScreenBounds.size.height
 
+#define StatusBarHeight     (Application.statusBarHidden ? 0 : 20)
+#define NavBarHeightFor(vc) (vc.navigationController.navigationBarHidden ? 0 : (IsPad?44:(IsPortrait?44:32)))
+
 #define UIColorWithRGBA(r,g,b,a) \
 [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:a]
 
 #define Image(i) [UIImage imageNamed:i]
+
+#define FormatString(format, ...) [NSString stringWithFormat:format, ##__VA_ARGS__]
 
 #if DEBUG
 #define APLog(format, ...) NSLog(format, ##__VA_ARGS__)
@@ -263,12 +268,16 @@ typedef enum
     // TransparentView to prevent user interaction while displaying pop-up
     UIView* clearViewForDisablingUI;
     
-    // Remember if we forced the StatusBar/NavigationBar to hide on opening
-    BOOL forcedStatusBarToHide;
-    BOOL forcedNavigationBarToHide;
-    
     // TopBar
     UIView* topBar;
+    UIButton* backBtn;
+    UIButton* filterBtn;
+    UILabel* titleLbl;
+    UIButton* cameraBtn;
+    UIButton* doneBtn;
+    
+    // Remember what was the navigationBarColor when AssetPicker launched
+    UIColor* previousNavigationBarColor;
     
     // TopBar - Filter Options
     APFilterType filterType;
@@ -279,7 +288,6 @@ typedef enum
     UIImagePickerControllerQualityType cameraQuality;
     UIImagePickerControllerCameraFlashMode cameraFlashMode;
     UIImagePickerControllerCameraCaptureMode cameraCaptureMode;
-    CGFloat cameraHorizontalMidX;
     
     // Loading Activity
     UIView* loadingShield;
@@ -370,15 +378,30 @@ typedef enum
 {
     [super viewDidLoad];
     self.view.backgroundColor = UIColorWithRGBA(230, 230, 230, 1);
-    self.navigationController.delegate = self;
+    self.navigationItem.hidesBackButton = YES;
     
-    [self checkStatusBarHidePermission];
+    if(iOSVersion >= 7.0f)
+    {
+        self.edgesForExtendedLayout = UIRectEdgeNone;
+        
+        previousNavigationBarColor = self.navigationController.navigationBar.barTintColor;
+        self.navigationController.navigationBar.barTintColor = [UIColor lightGrayColor];
+    }
+    else
+    {
+        previousNavigationBarColor = self.navigationController.navigationBar.tintColor;
+        self.navigationController.navigationBar.tintColor = [UIColor lightGrayColor];
+    }
     
-    // Prepare clearView and send it below all others
+    // Prepare clearView
     clearViewForDisablingUI = [[UIView alloc] initWithFrame:ScreenBounds];
     clearViewForDisablingUI.backgroundColor = [UIColor clearColor];
-    [self.view addSubview:clearViewForDisablingUI];
-    [self.view sendSubviewToBack:clearViewForDisablingUI];
+    [self.navigationController.view addSubview:clearViewForDisablingUI];
+    [self.navigationController.view sendSubviewToBack:clearViewForDisablingUI];
+    
+    UITapGestureRecognizer* tapRecognizer =
+    [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapOnTransparentView:)];
+    [clearViewForDisablingUI addGestureRecognizer:tapRecognizer];
     
     // By Default, filter is PHOTOS
     filterType = APFilterTypePhotos;
@@ -393,29 +416,9 @@ typedef enum
     assetWriteQueue = dispatch_queue_create([AssetWriteQueue UTF8String], NULL);
 }
 
--(void)checkStatusBarHidePermission
-{
-    if(iOSVersion >= 7.0f)
-    {
-        NSDictionary* infoPlistDict = [[NSBundle mainBundle] infoDictionary];
-        NSNumber* statusBarPermission = infoPlistDict[@"UIViewControllerBasedStatusBarAppearance"];
-        if(statusBarPermission == nil || [statusBarPermission boolValue])
-        {
-            APLog(@"StatusBar could't be forced to hide. Permission Not Set.\n"
-                  "To do this, add 'View controller-based status bar appearance = NO' "
-                  "in your project's info plist.\n"
-                  "Raw key for this is 'UIViewControllerBasedStatusBarAppearance'");
-        }
-    }
-}
-
 -(void)viewWillAppear:(BOOL)animated
 {
-    if(!self.navigationController.navigationBarHidden)
-    {
-        forcedNavigationBarToHide = YES;
-        [self.navigationController setNavigationBarHidden:YES animated:YES];
-    }
+    [super viewWillAppear:animated];
     
     [NotificationCenter addObserver:self
                            selector:@selector(collectionViewCellTapped:)
@@ -423,26 +426,86 @@ typedef enum
                              object:nil];
 }
 
--(void)viewDidDisappear:(BOOL)animated
+-(void)viewWillDisappear:(BOOL)animated
 {
-    if(forcedStatusBarToHide)
-        [Application setStatusBarHidden:NO withAnimation:UIStatusBarAnimationFade];
+    [super viewWillDisappear:animated];
     
-    if(forcedNavigationBarToHide)
-        [self.navigationController setNavigationBarHidden:NO animated:YES];
+    if(iOSVersion >= 7.0f)
+        self.navigationController.navigationBar.barTintColor = previousNavigationBarColor;
+    else
+        self.navigationController.navigationBar.tintColor = previousNavigationBarColor;
+    
+    [clearViewForDisablingUI removeFromSuperview];
+    
+    [UIView animateWithDuration:0.25f animations:^{topBar.alpha = 0.0f;}
+                     completion:^(BOOL finished){[topBar removeFromSuperview];}];
     
     [NotificationCenter removeObserver:self];
 }
 
 #pragma mark
-#pragma mark<UINavigationControllerDelegate>
+#pragma mark<Autorotation Support>
 #pragma mark
 
--(void)navigationController:(UINavigationController*)navigationController
-     willShowViewController:(UIViewController*)viewController animated:(BOOL)animated
+-(BOOL)shouldAutorotate
 {
-    forcedStatusBarToHide = !CGRectEqualToRect([Application statusBarFrame],CGRectZero);
-    [Application setStatusBarHidden:YES withAnimation:UIStatusBarAnimationFade];
+    return YES;
+}
+
+-(NSUInteger)supportedInterfaceOrientations
+{
+    return UIInterfaceOrientationMaskAllButUpsideDown;
+}
+
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+                               duration:(NSTimeInterval)duration
+{
+    [UIView animateWithDuration:0.25f animations:^{
+        BOOL isPortrait = UIInterfaceOrientationIsPortrait(toInterfaceOrientation);
+        CGRect targetBounds = (isPortrait?PortraitBounds:LandscapeBounds);
+        CGFloat newWidth = targetBounds.size.width;
+        CGFloat newHeight = targetBounds.size.height;
+        
+        clearViewForDisablingUI.frame = targetBounds;
+        
+        CGFloat navBarHeight = NavBarHeightFor(self);
+        CGFloat topBarHeight = 0;
+        if((navBarHeight == 44 && IsPad) ||
+           (navBarHeight == 32 && toInterfaceOrientation == UIInterfaceOrientationPortrait))
+        {
+            topBarHeight = 44;
+        }
+        else
+        {
+            topBarHeight = 32;
+        }
+        
+        topBar.frame = CGRectMake(0, 0, newWidth, topBarHeight);
+        
+        CGFloat titleLblWidth = (IsPad?400:(isPortrait?170:300));
+        
+        backBtn.frame = CGRectMake((IsPad?3:0), (topBarHeight-30)/2, 36, 30);
+        filterBtn.frame = CGRectMake((IsPad?60:40), (topBarHeight-30)/2, 30, 30);
+        titleLbl.frame = CGRectMake((newWidth-titleLblWidth)/2, (topBarHeight-38)/2, titleLblWidth, 38);
+        cameraBtn.frame = CGRectMake((newWidth-(IsPad?90:(isPortrait?71:80))), (topBarHeight-30)/2, 30, 30);
+        doneBtn.frame = CGRectMake((newWidth-(IsPad?40:(isPortrait?34:40))), (topBarHeight-30)/2, 33, 30);
+        
+        availableAssetsClctnVw.frame =
+        CGRectMake(0, ((navBarHeight>0)?0:topBarHeight), newWidth,
+                   newHeight-((navBarHeight>0)?0:topBarHeight)-StatusBarHeight);
+        
+        cameraOptionsContainer.frame =
+        CGRectMake(CGRectGetMidX(cameraBtn.frame)-170,
+                   StatusBarHeight+topBarHeight-9+(topBarHeight==32?6:0), 200, 258);
+        
+        [self reloadAllSectionHeaderLabelWidthsForScreenWidth:newWidth];
+        
+        loadingShield.frame = targetBounds;
+        loadingImgVw.center = CGPointMake(targetBounds.size.width/2, targetBounds.size.height/2);
+        
+        writingFilesMessageLbl.frame = CGRectMake(20, (newHeight-120)/2, newWidth-40, 40);
+        progressBar.frame = CGRectMake(50, (newHeight/2)+30, newWidth-100, 0);
+    }];
 }
 
 #pragma mark
@@ -492,6 +555,23 @@ typedef enum
          {
              APLog(@"Couldn't fetch assets from AssetsLibrary. Reason :- %@",
                    error.localizedDescription);
+             
+             if([ALAssetsLibrary authorizationStatus] == ALAuthorizationStatusDenied)
+             {
+                 NSString* applicationName =
+                 [[NSBundle mainBundle] infoDictionary][@"CFBundleDisplayName"];
+                 
+                 NSString* message =
+                 FormatString(@"You denied '%@' to access your PHOTOS earlier.\n"
+                              "To enable PHOTOS access, go to Settings -> Privacy "
+                              "-> Photos -> %@", applicationName, applicationName);
+                 
+                 [[[UIAlertView alloc] initWithTitle:@"Grant PHOTOS Permission !"
+                                             message:message
+                                            delegate:nil
+                                   cancelButtonTitle:@"Okay"
+                                   otherButtonTitles:nil] show];
+             }
          }];
     });
 }
@@ -510,10 +590,11 @@ typedef enum
     layout.footerReferenceSize = CGSizeZero;
     layout.sectionInset = UIEdgeInsetsMake(padding, padding, padding, padding);
     
+    CGFloat navBarHeight = NavBarHeightFor(self);
     availableAssetsClctnVw =
-    [[UICollectionView alloc]
-     initWithFrame:CGRectMake(0, 44, ScreenWidth, ScreenHeight-44)
-     collectionViewLayout:layout];
+    [[UICollectionView alloc] initWithFrame:CGRectMake(0, ((navBarHeight>0)?0:navBarHeight),
+                                                       ScreenWidth, ScreenHeight-navBarHeight-StatusBarHeight)
+                       collectionViewLayout:layout];
     availableAssetsClctnVw.dataSource = self;
     availableAssetsClctnVw.delegate = self;
     availableAssetsClctnVw.allowsMultipleSelection = YES;
@@ -528,6 +609,8 @@ typedef enum
                       withReuseIdentifier:AvailableAssetsCollectionHeader];
     
     availableAssets = [self filteredAssets];
+    [availableAssetsClctnVw reloadData];
+    
     sectionHeaders = [@{} mutableCopy];
     assetInfoLoadQueue = dispatch_queue_create([AssetInfoLoadQueue UTF8String], NULL);
 }
@@ -536,7 +619,6 @@ typedef enum
 {
     if(filterType == APFilterTypeAll)
         return [storedAssets mutableCopy];
-    
     
     NSPredicate* predicate = nil;
     if(filterType == APFilterTypePhotos)
@@ -611,6 +693,18 @@ typedef enum
                          filteredMatches, totalMatches];
 }
 
+-(void)reloadAllSectionHeaderLabelWidthsForScreenWidth:(CGFloat)newWidth
+{
+    [sectionHeaders enumerateKeysAndObjectsUsingBlock:
+     ^(NSIndexPath* key, UIView* obj, BOOL *stop)
+     {
+         UILabel* albumNameLbl = (UILabel*)[obj viewWithTag:12345];
+         CGRect frame = albumNameLbl.frame;
+         frame.size.width = (newWidth-(2*frame.origin.x));
+         albumNameLbl.frame = frame;
+     }];
+}
+
 -(void)reloadSectionHeadersAndAnyVisibleMatchingItemUsingIndexPath:(NSIndexPath*)indexPath
 {
     [sectionHeaders enumerateKeysAndObjectsUsingBlock:
@@ -635,7 +729,7 @@ typedef enum
     }
 }
 
--(void)refreshSavedPhotosAlbumAssets
+/*-(void)refreshSavedPhotosAlbumAssets
 {
     [AssetsLibrary enumerateGroupsWithTypes:ALAssetsGroupSavedPhotos
                                  usingBlock:^(ALAssetsGroup* group, BOOL* stop)
@@ -688,19 +782,56 @@ typedef enum
          APLog(@"AssetLibrary Group 'SavedPhotos' couldn't be browsed at the time."
                " Reason :- %@", error.localizedDescription);
      }];
+}*/
+
+-(void)refreshSavedPhotosAddAssetWithURL:(NSURL*)assetURL
+{
+    [AssetsLibrary assetForURL:assetURL
+                   resultBlock:^(ALAsset* asset)
+     {
+         if(asset != nil)
+         {
+             [selectedAssets addAsset:asset];
+             [storedAssets[0][AlbumAssets] addObject:asset];
+             
+             NSString* assetType = [asset valueForProperty:ALAssetPropertyType];
+             
+             if((filterType == APFilterTypeAll) ||
+                ([assetType isEqualToString:ALAssetTypePhoto] && filterType == APFilterTypePhotos) ||
+                ([assetType isEqualToString:ALAssetTypeVideo] && filterType == APFilterTypeVideos))
+             {
+                 [availableAssets[0][AlbumAssets] addObject:asset];
+                 
+                 NSIndexPath* indexPath =
+                 [NSIndexPath indexPathForItem:[availableAssets[0][AlbumAssets] count]-1 inSection:0];
+                 [availableAssetsClctnVw insertItemsAtIndexPaths:@[indexPath]];
+                 
+                 double delayInSeconds = 0.75f;
+                 dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+                 dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+                     APAvailableAssetsCollectionItem* item = (APAvailableAssetsCollectionItem*)
+                     [availableAssetsClctnVw cellForItemAtIndexPath:indexPath];
+                     item.selected = YES;
+                     [NotificationCenter postNotificationName:ItemTappedNotification object:item];
+                 });
+             }
+         }
+     }
+                  failureBlock:^(NSError* error)
+     {
+         APLog(@"Couldn't get last saved asset from Assets Library. Reason :- %@",
+               error.localizedDescription);
+     }];
 }
 
 #pragma mark
-#pragma mark<UIResponder Methods>
+#pragma mark<UIGestureRecognizer Methods>
 #pragma mark
 
--(void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event
+-(void)handleTapOnTransparentView:(UITapGestureRecognizer*)tapRecognizer
 {
-    if([[[touches anyObject] view] isEqual:clearViewForDisablingUI])
-    {
-        [self.view sendSubviewToBack:clearViewForDisablingUI];
-        [cameraOptionsContainer removeFromSuperview];
-    }
+    [self.navigationController.view sendSubviewToBack:clearViewForDisablingUI];
+    [cameraOptionsContainer removeFromSuperview];
 }
 
 #pragma mark
@@ -712,31 +843,31 @@ typedef enum
     topBar = [[UIView alloc] initWithFrame:CGRectMake(0, 0, ScreenWidth, 44)];
     topBar.backgroundColor = [UIColor lightGrayColor];
     
-    UIButton* backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     backBtn.imageEdgeInsets = UIEdgeInsetsMake(4, 8, 4, 14);
     backBtn.backgroundColor = [UIColor clearColor];
     [backBtn setImage:Image(@"ap_back.png") forState:UIControlStateNormal];
     [backBtn addTarget:self action:@selector(backBtnAction:)
       forControlEvents:UIControlEventTouchUpInside];
     
-    UIButton* filterBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    filterBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [filterBtn setImage:Image(@"ap_photo.png") forState:UIControlStateNormal];
     [filterBtn addTarget:self action:@selector(filterBtnAction:)
         forControlEvents:UIControlEventTouchUpInside];
     
-    UILabel* titleLbl = [[UILabel alloc] init];
+    titleLbl = [[UILabel alloc] init];
     titleLbl.backgroundColor = [UIColor clearColor];
     titleLbl.textAlignment = NSTextAlignmentCenter;
     titleLbl.textColor = UIColorWithRGBA(38, 38, 38, 1);
     titleLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:16.0f];
     titleLbl.numberOfLines = 0;
     
-    UIButton* cameraBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    cameraBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [cameraBtn setImage:Image(@"ap_camera.png") forState:UIControlStateNormal];
     [cameraBtn addTarget:self action:@selector(cameraBtnAction:)
         forControlEvents:UIControlEventTouchUpInside];
     
-    UIButton* doneBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    doneBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [doneBtn setImage:Image(@"ap_done.png") forState:UIControlStateNormal];
     [doneBtn addTarget:self action:@selector(doneBtnAction:)
       forControlEvents:UIControlEventTouchUpInside];
@@ -749,16 +880,29 @@ typedef enum
     cameraBtn.frame = CGRectMake((ScreenWidth-(IsPad?90:(IsPortrait?71:80))), 7, 30, 30);
     doneBtn.frame = CGRectMake((ScreenWidth-(IsPad?40:(IsPortrait?34:40))), 7, 33, 30);
     
-    cameraHorizontalMidX = CGRectGetMidX(cameraBtn.frame);
-    
     [topBar addSubview:backBtn];
     [topBar addSubview:filterBtn];
     [topBar addSubview:titleLbl];
     [topBar addSubview:cameraBtn];
     [topBar addSubview:doneBtn];
     
-    [self.view addSubview:topBar];
     titleLbl.text = @"Select Photos/Videos From Library";
+    
+    CGFloat navBarHeight = NavBarHeightFor(self);
+    if(navBarHeight < 44)
+        topBar.frame = CGRectMake(0, (navBarHeight-44)/2, topBar.frame.size.width, 38);
+    else
+        topBar.frame = CGRectMake(0, 0, topBar.frame.size.width, 44);
+    
+    if(navBarHeight > 0)
+        [self.navigationController.navigationBar addSubview:topBar];
+    else
+        [self.view addSubview:topBar];
+    
+    topBar.alpha = 0.0f;
+    [UIView animateWithDuration:0.25f animations:^{
+        topBar.alpha = 1.0f;
+    }];
 }
 
 -(void)backBtnAction:(UIButton*)sender
@@ -959,9 +1103,7 @@ typedef enum
         double delayInSeconds = 0.5f;
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-            [writingFilesMessageLbl removeFromSuperview];
-            [progressBar removeFromSuperview];
-            
+            [loadingShield removeFromSuperview];
             [self.navigationController popViewControllerAnimated:YES];
             
             if(apCompletion != nil)
@@ -979,7 +1121,7 @@ typedef enum
 
 -(void)prepareLoading
 {
-    loadingShield = [[UIView alloc] initWithFrame:self.view.bounds];
+    loadingShield = [[UIView alloc] initWithFrame:ScreenBounds];
     loadingShield.backgroundColor = [UIColor clearColor];
     
     loadingImgVw = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
@@ -993,7 +1135,7 @@ typedef enum
 {
     if([loadingShield superview] == nil)
     {
-        [self.view addSubview:loadingShield];
+        [self.navigationController.view addSubview:loadingShield];
         
         CAKeyframeAnimation* animateTransform =
         [CAKeyframeAnimation animationWithKeyPath:@"transform"];
@@ -1033,8 +1175,13 @@ typedef enum
 {
     if(cameraOptionsContainer == nil)
     {
-        cameraOptionsContainer = [[UIView alloc]
-                                  initWithFrame:CGRectMake(cameraHorizontalMidX-170, 35, 200, 258)];
+        CGFloat yOffset = (NavBarHeightFor(self)+StatusBarHeight)-9;
+        if(yOffset < 0)
+            yOffset = 35;
+        
+        cameraOptionsContainer =
+        [[UIView alloc] initWithFrame:CGRectMake(CGRectGetMidX(cameraBtn.frame)-170,
+                                                 yOffset, 200, 258)];
         cameraOptionsContainer.backgroundColor = [UIColor clearColor];
         
         UIImageView* topArrowImgVw = [[UIImageView alloc]
@@ -1054,7 +1201,7 @@ typedef enum
         NSArray* defaultOptions = @[@"Type - REAR", @"Quality - HIGH",
                                     @"Flash - OFF", @"Mode - PHOTO"];
         
-        CGFloat yOffset = 20;
+        yOffset = 20;
         for(int i=1; i<5; i++)
         {
             UIButton* pointerBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -1097,8 +1244,8 @@ typedef enum
     
     if([cameraOptionsContainer superview] == nil)
     {
-        [self.view bringSubviewToFront:clearViewForDisablingUI];
-        [self.view addSubview:cameraOptionsContainer];
+        [self.navigationController.view bringSubviewToFront:clearViewForDisablingUI];
+        [self.navigationController.view addSubview:cameraOptionsContainer];
     }
 }
 
@@ -1208,12 +1355,15 @@ typedef enum
 
 -(void)openCamera:(UIButton*)sender
 {
-    [self.view sendSubviewToBack:clearViewForDisablingUI];
+    [self.navigationController.view sendSubviewToBack:clearViewForDisablingUI];
     [cameraOptionsContainer removeFromSuperview];
     
     if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera])
     {
         UIImagePickerController* cameraController = [[UIImagePickerController alloc] init];
+        cameraController.sourceType = UIImagePickerControllerSourceTypeCamera;
+        cameraController.mediaTypes =
+        [UIImagePickerController availableMediaTypesForSourceType:UIImagePickerControllerSourceTypeCamera];
         cameraController.cameraDevice = cameraDevice;
         cameraController.videoQuality = cameraQuality;
         cameraController.cameraFlashMode = cameraFlashMode;
@@ -1244,7 +1394,8 @@ typedef enum
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
     
-    dispatch_async(dispatch_get_main_queue(), ^{
+    // Used selector '@selector(refreshSavedPhotosAlbumAssets)' unknowingly
+     /*dispatch_async(dispatch_get_main_queue(), ^{
         if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
         {
             UIImageWriteToSavedPhotosAlbum(info[UIImagePickerControllerOriginalImage],
@@ -1259,6 +1410,54 @@ typedef enum
                 UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self,
                                                     @selector(refreshSavedPhotosAlbumAssets),
                                                     CameraReturnedAssetWritten);
+            }
+        }
+    });*/
+    /* Got weird crash
+      "Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[NSInvocation setArgument:atIndex:]: index (2) out of bounds [-1, 1]"
+      Googling it got me the reason, should've used following, missed them !
+      - (void)image:(UIImage*)image didFinishSavingWithError:(NSError*)error contextInfo:(void*)contextInfo
+      - (void)video:(NSString*)videoPath didFinishSavingWithError:(NSError*)error contextInfo:(void*)contextInfo
+     
+      Any way, what's bad in writing directly to AssetsLibrary & getting assetURL in return :)
+     */
+    
+    dispatch_async(assetWriteQueue, ^{
+        if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
+        {
+            CGImageRef imageRef = ((UIImage*)info[UIImagePickerControllerOriginalImage]).CGImage;
+            [AssetsLibrary writeImageToSavedPhotosAlbum:imageRef metadata:nil
+                                        completionBlock:^(NSURL* assetURL, NSError* error)
+             {
+                 if(error != nil)
+                 {
+                     APLog(@"Couldn't Save Image. Reason :- %@", error.localizedDescription);
+                     return;
+                 }
+                 
+                 dispatch_async(dispatch_get_main_queue(), ^{
+                     [self refreshSavedPhotosAddAssetWithURL:assetURL];
+                 });
+             }];
+        }
+        else
+        {
+            NSURL* videoURL = info[UIImagePickerControllerMediaURL];
+            if([AssetsLibrary videoAtPathIsCompatibleWithSavedPhotosAlbum:videoURL])
+            {
+                [AssetsLibrary writeVideoAtPathToSavedPhotosAlbum:videoURL
+                                                  completionBlock:^(NSURL* assetURL, NSError* error)
+                 {
+                     if(error != nil)
+                     {
+                         APLog(@"Couldn't Save Video. Reason :- %@", error.localizedDescription);
+                         return;
+                     }
+                     
+                     dispatch_async(dispatch_get_main_queue(), ^{
+                         [self refreshSavedPhotosAddAssetWithURL:assetURL];
+                     });
+                 }];
             }
         }
     });

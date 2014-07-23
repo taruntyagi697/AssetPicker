@@ -9,6 +9,14 @@
 #import "APDViewController.h"
 #import "AssetPicker.h"
 
+#define IsPad ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad)
+
+#define ScreenWidth  [UIScreen mainScreen].bounds.size.width
+#define ScreenHeight [UIScreen mainScreen].bounds.size.height
+
+#define StatusBarHeight     ([UIApplication sharedApplication].statusBarHidden ? 0 : 20)
+#define NavBarHeightFor(vc) (vc.navigationController.navigationBarHidden ? 0 : 44)
+
 @interface APDViewController ()
 
 @end
@@ -18,6 +26,8 @@
 -(void)viewDidLoad
 {
     [super viewDidLoad];
+    
+    goToAssetPickerBtn = (IsPad ? iPad_GoToAssetPickerBtn : iPhone_GoToAssetPickerBtn);
 }
 
 -(IBAction)goToAssetPickerBtnAction:(UIButton*)sender
@@ -36,6 +46,46 @@
      {
          NSLog(@"Cancelled.");
      }];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [self setButtonInCenterForOrientation:[UIApplication sharedApplication].statusBarOrientation];
+}
+
+#pragma mark
+#pragma mark<Autorotation Support>
+#pragma mark
+
+-(BOOL)shouldAutorotate
+{
+    return YES;
+}
+
+-(NSUInteger)supportedInterfaceOrientations
+{
+    return UIInterfaceOrientationMaskAllButUpsideDown;
+}
+
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+                               duration:(NSTimeInterval)duration
+{
+    [self setButtonInCenterForOrientation:toInterfaceOrientation];
+}
+
+#pragma mark
+#pragma mark<Helpers>
+#pragma mark
+
+-(void)setButtonInCenterForOrientation:(UIInterfaceOrientation)orientation
+{
+    [UIView animateWithDuration:0.25f animations:^{
+        BOOL isPortrait = UIInterfaceOrientationIsPortrait(orientation);
+        CGFloat newWidth = (isPortrait?ScreenWidth:ScreenHeight);
+        CGFloat newHeight = (isPortrait?ScreenHeight:ScreenWidth)-StatusBarHeight-NavBarHeightFor(self);
+        
+        goToAssetPickerBtn.center = CGPointMake(newWidth/2, newHeight/2);
+    }];
 }
 
 @end

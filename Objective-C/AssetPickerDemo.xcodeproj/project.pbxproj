@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA03F9EC197FFBEF00B0FA2B /* APNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = AA03F9EB197FFBEF00B0FA2B /* APNavigationController.m */; };
 		AA5258B0197853F3003ECED5 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5258AF197853F3003ECED5 /* AssetsLibrary.framework */; };
 		AA9DD301196D948C003488D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA9DD300196D948C003488D1 /* Foundation.framework */; };
 		AA9DD303196D948C003488D1 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA9DD302196D948C003488D1 /* CoreGraphics.framework */; };
@@ -51,6 +52,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AA03F9EA197FFBEF00B0FA2B /* APNavigationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = APNavigationController.h; sourceTree = "<group>"; };
+		AA03F9EB197FFBEF00B0FA2B /* APNavigationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = APNavigationController.m; sourceTree = "<group>"; };
 		AA5258AF197853F3003ECED5 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		AA9DD2FD196D948C003488D1 /* AssetPickerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AssetPickerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA9DD300196D948C003488D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -154,6 +157,8 @@
 		AA9DD306196D948C003488D1 /* AssetPickerDemo */ = {
 			isa = PBXGroup;
 			children = (
+				AA03F9EA197FFBEF00B0FA2B /* APNavigationController.h */,
+				AA03F9EB197FFBEF00B0FA2B /* APNavigationController.m */,
 				AA9DD30F196D948C003488D1 /* APDAppDelegate.h */,
 				AA9DD310196D948C003488D1 /* APDAppDelegate.m */,
 				AA9DD312196D948C003488D1 /* Main_iPhone.storyboard */,
@@ -346,6 +351,7 @@
 				AA9DD311196D948C003488D1 /* APDAppDelegate.m in Sources */,
 				AA9DD31A196D948C003488D1 /* APDViewController.m in Sources */,
 				AAA19497197B14DE00C7EF21 /* AssetPicker.m in Sources */,
+				AA03F9EC197FFBEF00B0FA2B /* APNavigationController.m in Sources */,
 				AA9DD30D196D948C003488D1 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -10,7 +10,10 @@
 
 @interface APDViewController : UIViewController
 {
+    IBOutlet UIButton* iPad_GoToAssetPickerBtn;
+    IBOutlet UIButton* iPhone_GoToAssetPickerBtn;
     
+    UIButton* goToAssetPickerBtn;
 }
 
 -(IBAction)goToAssetPickerBtnAction:(UIButton*)sender;
