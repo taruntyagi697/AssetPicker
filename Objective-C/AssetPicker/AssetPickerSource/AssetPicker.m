@@ -420,6 +420,9 @@ typedef enum
 {
     [super viewWillAppear:animated];
     
+    if([topBar superview] == nil)
+        [self addTopBar];
+    
     [NotificationCenter addObserver:self
                            selector:@selector(collectionViewCellTapped:)
                                name:ItemTappedNotification
@@ -511,6 +514,25 @@ typedef enum
 #pragma mark
 #pragma mark<Helpers>
 #pragma mark
+
+-(void)addTopBar
+{
+    CGFloat navBarHeight = NavBarHeightFor(self);
+    if(navBarHeight < 44)
+        topBar.frame = CGRectMake(0, (navBarHeight-44)/2, topBar.frame.size.width, 38);
+    else
+        topBar.frame = CGRectMake(0, 0, topBar.frame.size.width, 44);
+    
+    if(navBarHeight > 0)
+        [self.navigationController.navigationBar addSubview:topBar];
+    else
+        [self.view addSubview:topBar];
+    
+    topBar.alpha = 0.0f;
+    [UIView animateWithDuration:0.25f animations:^{
+        topBar.alpha = 1.0f;
+    }];
+}
 
 -(void)fetchAvailableAssets
 {
@@ -888,21 +910,7 @@ typedef enum
     
     titleLbl.text = @"Select Photos/Videos From Library";
     
-    CGFloat navBarHeight = NavBarHeightFor(self);
-    if(navBarHeight < 44)
-        topBar.frame = CGRectMake(0, (navBarHeight-44)/2, topBar.frame.size.width, 38);
-    else
-        topBar.frame = CGRectMake(0, 0, topBar.frame.size.width, 44);
-    
-    if(navBarHeight > 0)
-        [self.navigationController.navigationBar addSubview:topBar];
-    else
-        [self.view addSubview:topBar];
-    
-    topBar.alpha = 0.0f;
-    [UIView animateWithDuration:0.25f animations:^{
-        topBar.alpha = 1.0f;
-    }];
+    [self addTopBar];
 }
 
 -(void)backBtnAction:(UIButton*)sender
