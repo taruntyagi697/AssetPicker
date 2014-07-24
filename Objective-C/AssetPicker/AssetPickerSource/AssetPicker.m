@@ -420,9 +420,6 @@ typedef enum
 {
     [super viewWillAppear:animated];
     
-    if([topBar superview] == nil)
-        [self addTopBar];
-    
     [NotificationCenter addObserver:self
                            selector:@selector(collectionViewCellTapped:)
                                name:ItemTappedNotification
@@ -432,16 +429,6 @@ typedef enum
 -(void)viewWillDisappear:(BOOL)animated
 {
     [super viewWillDisappear:animated];
-    
-    if(iOSVersion >= 7.0f)
-        self.navigationController.navigationBar.barTintColor = previousNavigationBarColor;
-    else
-        self.navigationController.navigationBar.tintColor = previousNavigationBarColor;
-    
-    [clearViewForDisablingUI removeFromSuperview];
-    
-    [UIView animateWithDuration:0.25f animations:^{topBar.alpha = 0.0f;}
-                     completion:^(BOOL finished){[topBar removeFromSuperview];}];
     
     [NotificationCenter removeObserver:self];
 }
@@ -846,6 +833,19 @@ typedef enum
      }];
 }
 
+-(void)removeTopBarNClearViewProvideNavigationBarOriginalAppearance
+{
+    [UIView animateWithDuration:0.25f animations:^{topBar.alpha = 0.0f;}
+                     completion:^(BOOL finished){[topBar removeFromSuperview];}];
+    
+    [clearViewForDisablingUI removeFromSuperview];
+    
+    if(iOSVersion >= 7.0f)
+        self.navigationController.navigationBar.barTintColor = previousNavigationBarColor;
+    else
+        self.navigationController.navigationBar.tintColor = previousNavigationBarColor;
+}
+
 #pragma mark
 #pragma mark<UIGestureRecognizer Methods>
 #pragma mark
@@ -916,6 +916,7 @@ typedef enum
 -(void)backBtnAction:(UIButton*)sender
 {
     [self.navigationController popViewControllerAnimated:YES];
+    [self removeTopBarNClearViewProvideNavigationBarOriginalAppearance];
     
     if(apCancel != nil)
     {
@@ -963,12 +964,15 @@ typedef enum
     if([selectedAssets count] == 0)
     {
         [self.navigationController popViewControllerAnimated:YES];
+        [self removeTopBarNClearViewProvideNavigationBarOriginalAppearance];
         
         if(apCompletion != nil)
         {
             apCompletion(self, @[]);
             apCompletion = nil;
         }
+        
+        return;
     }
     
     totalBytesToWrite = 0;
@@ -1113,6 +1117,7 @@ typedef enum
         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
             [loadingShield removeFromSuperview];
             [self.navigationController popViewControllerAnimated:YES];
+            [self removeTopBarNClearViewProvideNavigationBarOriginalAppearance];
             
             if(apCompletion != nil)
             {
