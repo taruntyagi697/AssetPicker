@@ -545,10 +545,15 @@ typedef enum
                  NSDictionary* albumInfo = @{AlbumName:albumName,
                                              AlbumAssets:albumAssets};
                  
-                 if([albumName isEqualToString:@"Saved Photos"])
+                 if([albumName isEqualToString:@"Saved Photos"] ||
+                    [albumName isEqualToString:@"Camera Roll"])
+                 {
                      [storedAssets insertObject:albumInfo atIndex:0];
+                 }
                  else
+                 {
                      [storedAssets addObject:albumInfo];
+                 }
              }
              
              if(group == nil || *stop)
@@ -601,8 +606,9 @@ typedef enum
     
     CGFloat navBarHeight = NavBarHeightFor(self);
     availableAssetsClctnVw =
-    [[UICollectionView alloc] initWithFrame:CGRectMake(0, ((navBarHeight>0)?0:navBarHeight),
-                                                       ScreenWidth, ScreenHeight-navBarHeight-StatusBarHeight)
+    [[UICollectionView alloc] initWithFrame:
+     CGRectMake(0, ((navBarHeight>0)?0:navBarHeight),
+                ScreenWidth, ScreenHeight-navBarHeight-StatusBarHeight)
                        collectionViewLayout:layout];
     availableAssetsClctnVw.dataSource = self;
     availableAssetsClctnVw.delegate = self;
@@ -650,7 +656,7 @@ typedef enum
     NSMutableArray* filteredAssets = [@[] mutableCopy];
     for(NSMutableDictionary* storedAlbumInfo in storedAssets)
     {
-        NSMutableArray* albumAssets = storedAlbumInfo[AlbumAssets];
+        NSMutableArray* albumAssets = [storedAlbumInfo[AlbumAssets] mutableCopy];
         NSArray* filteredAlbumAssets = [albumAssets filteredArrayUsingPredicate:predicate];
         if(filteredAlbumAssets == nil)
             filteredAlbumAssets = [@[] mutableCopy];
@@ -801,7 +807,13 @@ typedef enum
          if(asset != nil)
          {
              [selectedAssets addAsset:asset];
-             [storedAssets[0][AlbumAssets] addObject:asset];
+             
+             //[storedAssets[0][AlbumAssets] addObject:asset];
+             NSMutableDictionary* savedPhotosAlbum = [storedAssets[0] mutableCopy];
+             NSMutableArray* savedPhotosAlbumAssets = [savedPhotosAlbum[AlbumAssets] mutableCopy];
+             [savedPhotosAlbumAssets insertObject:asset atIndex:0];
+             savedPhotosAlbum[AlbumAssets] = savedPhotosAlbumAssets;
+             [storedAssets replaceObjectAtIndex:0 withObject:savedPhotosAlbum];
              
              NSString* assetType = [asset valueForProperty:ALAssetPropertyType];
              
@@ -809,7 +821,12 @@ typedef enum
                 ([assetType isEqualToString:ALAssetTypePhoto] && filterType == APFilterTypePhotos) ||
                 ([assetType isEqualToString:ALAssetTypeVideo] && filterType == APFilterTypeVideos))
              {
-                 [availableAssets[0][AlbumAssets] addObject:asset];
+                 //[availableAssets[0][AlbumAssets] addObject:asset];
+                 savedPhotosAlbum = [availableAssets[0] mutableCopy];
+                 savedPhotosAlbumAssets = [savedPhotosAlbum[AlbumAssets] mutableCopy];
+                 [savedPhotosAlbumAssets insertObject:asset atIndex:0];
+                 savedPhotosAlbum[AlbumAssets] = savedPhotosAlbumAssets;
+                 [availableAssets replaceObjectAtIndex:0 withObject:savedPhotosAlbum];
                  
                  NSIndexPath* indexPath =
                  [NSIndexPath indexPathForItem:[availableAssets[0][AlbumAssets] count]-1 inSection:0];
