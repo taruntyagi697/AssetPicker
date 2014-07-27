@@ -68,9 +68,22 @@ typedef void (^APCancelHandler)(AssetPicker* picker);
 
 /*
  * Class helper, only thing needed to push AssetPicker, 
- * get callbacks for Completion or Failure
+ * get callbacks for Completion or Failure blocks.
+ * By default, it considers only NavigationBar, not TabBar
+ * It calls the latter method with considersTabBar:NO
  */
 +(void)showAssetPickerIn:(UINavigationController*)navigationController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
+/*
+ * You want to push AssetPicker in a naviagtionController
+ * that is wrapped into a tabBarController.
+ * Just let it know that it has to consider tabBar height margin
+ * in it's bounds calculations.
+ */
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+         considersTabBar:(BOOL)isInTabBarController
        completionHandler:(APCompletionHandler)completion
            cancelHandler:(APCancelHandler)cancel;
 

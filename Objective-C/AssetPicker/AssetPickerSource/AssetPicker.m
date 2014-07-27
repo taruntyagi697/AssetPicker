@@ -43,6 +43,7 @@
 
 #define StatusBarHeight     (Application.statusBarHidden ? 0 : 20)
 #define NavBarHeightFor(vc) (vc.navigationController.navigationBarHidden ? 0 : (IsPad?44:(IsPortrait?44:32)))
+#define TabBarHeight        (IsPad?56:49)
 
 #define ThemeNavBarColor [UIColor whiteColor]
 
@@ -311,6 +312,9 @@ typedef enum
     NSMutableDictionary* sectionHeaders;
     dispatch_queue_t assetInfoLoadQueue;
     
+    // Considers Tab Bar
+    BOOL isContainedInTabBarController;
+    
     // Local(Documents) File Write Support
     long long totalBytesToWrite;
     long long totalBytesWritten;
@@ -345,18 +349,32 @@ typedef enum
        completionHandler:(APCompletionHandler)completion
            cancelHandler:(APCancelHandler)cancel
 {
+    return [self showAssetPickerIn:navigationController
+                   considersTabBar:NO
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
     AssetPicker* picker = [[AssetPicker alloc] initWithCompletionHandler:completion
-                                                           cancelHandler:cancel];
+                                                           cancelHandler:cancel
+                                                         considersTabBar:isInTabBarController];
     [navigationController pushViewController:picker animated:YES];
 }
 
 -(id)initWithCompletionHandler:(APCompletionHandler)completion
                  cancelHandler:(APCancelHandler)cancel
+               considersTabBar:(BOOL)isInTabBarController
 {
     if(self = [super init])
     {
         apCompletion = completion;
         apCancel = cancel;
+        isContainedInTabBarController = isInTabBarController;
         
         storedAssets = [@[] mutableCopy];
         availableAssets = [@[] mutableCopy];
@@ -366,6 +384,10 @@ typedef enum
     
     return self;
 }
+
+#pragma mark
+#pragma mark<Clear Local Copies>
+#pragma mark
 
 +(void)clearLocalCopiesForAssets
 {
@@ -379,7 +401,7 @@ typedef enum
 -(void)viewDidLoad
 {
     [super viewDidLoad];
-    self.view.backgroundColor = UIColorWithRGBA(230, 230, 230, 1);
+    self.view.backgroundColor = ThemeNavBarColor;
     self.navigationItem.hidesBackButton = YES;
     
     if(iOSVersion >= 7.0f)
@@ -456,13 +478,15 @@ typedef enum
         BOOL isPortrait = UIInterfaceOrientationIsPortrait(toInterfaceOrientation);
         CGRect targetBounds = (isPortrait?PortraitBounds:LandscapeBounds);
         CGFloat newWidth = targetBounds.size.width;
-        CGFloat newHeight = targetBounds.size.height;
+        CGFloat newHeight = targetBounds.size.height-(isContainedInTabBarController?TabBarHeight:0);
         
         clearViewForDisablingUI.frame = targetBounds;
         
         CGFloat navBarHeight = NavBarHeightFor(self);
         CGFloat topBarHeight = 0;
-        if((navBarHeight == 44 && IsPad) ||
+        if((navBarHeight == 0 &&
+            (IsPad || (!IsPad && UIInterfaceOrientationIsPortrait(toInterfaceOrientation)))) ||
+           (navBarHeight == 44 && IsPad) ||
            (navBarHeight == 32 && toInterfaceOrientation == UIInterfaceOrientationPortrait))
         {
             topBarHeight = 44;
@@ -472,7 +496,8 @@ typedef enum
             topBarHeight = 32;
         }
         
-        topBar.frame = CGRectMake(0, 0, newWidth, topBarHeight);
+        topBar.frame = CGRectMake(0, ((iOSVersion>=7.0f && navBarHeight==0)?StatusBarHeight:0),
+                                  newWidth, topBarHeight);
         
         CGFloat titleLblWidth = (IsPad?400:(isPortrait?170:300));
         
@@ -483,8 +508,8 @@ typedef enum
         doneBtn.frame = CGRectMake((newWidth-(IsPad?40:(isPortrait?34:40))), (topBarHeight-30)/2, 33, 30);
         
         availableAssetsClctnVw.frame =
-        CGRectMake(0, ((navBarHeight>0)?0:topBarHeight), newWidth,
-                   newHeight-((navBarHeight>0)?0:topBarHeight)-StatusBarHeight);
+        CGRectMake(0, ((navBarHeight>0)?0:topBarHeight+((iOSVersion>=7.0f)?StatusBarHeight:0)),
+                   newWidth, (newHeight-topBarHeight-StatusBarHeight));
         
         cameraOptionsContainer.frame =
         CGRectMake(CGRectGetMidX(cameraBtn.frame)-170,
@@ -507,10 +532,26 @@ typedef enum
 -(void)addTopBar
 {
     CGFloat navBarHeight = NavBarHeightFor(self);
-    if(navBarHeight < 44)
-        topBar.frame = CGRectMake(0, (navBarHeight-44)/2, topBar.frame.size.width, 38);
+    if(navBarHeight > 0 && navBarHeight < 44)
+    {
+        topBar.frame = CGRectMake(0, (navBarHeight-44)/2, topBar.frame.size.width, navBarHeight);
+    }
     else
-        topBar.frame = CGRectMake(0, 0, topBar.frame.size.width, 44);
+    {
+        CGFloat topBarHeight = IsPad?44:(IsPortrait?44:32);
+        topBar.frame = CGRectMake(0, (iOSVersion>=7.0f && navBarHeight==0)?StatusBarHeight:0,
+                                  topBar.frame.size.width, topBarHeight);
+        
+        if(topBarHeight != 44)
+        {
+            for(UIView* sbvw in topBar.subviews)
+            {
+                CGRect frame = sbvw.frame;
+                frame.origin.y = (topBarHeight-frame.size.height)/2;
+                sbvw.frame = frame;
+            }
+        }
+    }
     
     if(navBarHeight > 0)
         [self.navigationController.navigationBar addSubview:topBar];
@@ -607,15 +648,17 @@ typedef enum
     layout.sectionInset = UIEdgeInsetsMake(padding, padding, padding, padding);
     
     CGFloat navBarHeight = NavBarHeightFor(self);
+    CGRect frame = CGRectMake(0, ((navBarHeight>0)?0:topBar.frame.size.height+
+                                  ((iOSVersion>=7.0f)?StatusBarHeight:0)),
+                              ScreenWidth, (ScreenHeight-topBar.frame.size.height-StatusBarHeight-
+                               (isContainedInTabBarController?TabBarHeight:0)));
     availableAssetsClctnVw =
-    [[UICollectionView alloc] initWithFrame:
-     CGRectMake(0, ((navBarHeight>0)?0:navBarHeight),
-                ScreenWidth, ScreenHeight-navBarHeight-StatusBarHeight)
+    [[UICollectionView alloc] initWithFrame:frame
                        collectionViewLayout:layout];
     availableAssetsClctnVw.dataSource = self;
     availableAssetsClctnVw.delegate = self;
     availableAssetsClctnVw.allowsMultipleSelection = YES;
-    availableAssetsClctnVw.backgroundColor = [UIColor clearColor];
+    availableAssetsClctnVw.backgroundColor = UIColorWithRGBA(230, 230, 230, 1);
     [self.view addSubview:availableAssetsClctnVw];
     
     [availableAssetsClctnVw registerClass:[APAvailableAssetsCollectionItem class]
@@ -910,6 +953,7 @@ typedef enum
     
     doneBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [doneBtn setImage:Image(@"ap_done.png") forState:UIControlStateNormal];
+    [doneBtn setImageEdgeInsets:UIEdgeInsetsMake(4, 3, 2, 3)];
     [doneBtn addTarget:self action:@selector(doneBtnAction:)
       forControlEvents:UIControlEventTouchUpInside];
     
@@ -1158,7 +1202,7 @@ typedef enum
     
     loadingImgVw = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
     loadingImgVw.center = loadingShield.center;
-    loadingImgVw.image = [UIImage imageNamed:@"ap_loading.png"];
+    loadingImgVw.image = Image(@"ap_loading.png");
     
     [loadingShield addSubview:loadingImgVw];
 }
@@ -1207,9 +1251,8 @@ typedef enum
 {
     if(cameraOptionsContainer == nil)
     {
-        CGFloat yOffset = (NavBarHeightFor(self)+StatusBarHeight)-9;
-        if(yOffset < 0)
-            yOffset = 35;
+        CGFloat topBarHeight = topBar.frame.size.height;
+        CGFloat yOffset = StatusBarHeight+topBarHeight-9+(topBarHeight==32?6:0);
         
         cameraOptionsContainer =
         [[UIView alloc] initWithFrame:CGRectMake(CGRectGetMidX(cameraBtn.frame)-170,
@@ -1218,10 +1261,10 @@ typedef enum
         
         UIImageView* topArrowImgVw = [[UIImageView alloc]
                                       initWithFrame:CGRectMake(160, 0, 20, 20)];
-        topArrowImgVw.image = [UIImage imageNamed:@"ap_up_arrow.png"];
+        topArrowImgVw.image = Image(@"ap_up_arrow.png");
         [cameraOptionsContainer addSubview:topArrowImgVw];
         
-        UIView* cameraOptionsVw = [[UIView alloc] initWithFrame:CGRectMake(0, 18, 200, 240)];
+        UIView* cameraOptionsVw = [[UIView alloc] initWithFrame:CGRectMake(0, 18, 200, 200)];
         cameraOptionsVw.backgroundColor = [UIColor whiteColor];
         cameraOptionsVw.layer.cornerRadius = 8.0f;
         
@@ -1233,7 +1276,7 @@ typedef enum
         NSArray* defaultOptions = @[@"Type - REAR", @"Quality - HIGH",
                                     @"Flash - OFF", @"Mode - PHOTO"];
         
-        yOffset = 20;
+        yOffset = 5;
         for(int i=1; i<5; i++)
         {
             UIButton* pointerBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -1260,7 +1303,7 @@ typedef enum
         }
         
         UIButton* takeAShotBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        takeAShotBtn.frame = CGRectMake(85, 190, 30, 30);
+        takeAShotBtn.frame = CGRectMake(85, 165, 30, 30);
         [takeAShotBtn setImage:Image(@"ap_take_a_shot.png") forState:UIControlStateNormal];
         [takeAShotBtn addTarget:self action:@selector(openCamera:)
                forControlEvents:UIControlEventTouchUpInside];
