@@ -44,6 +44,8 @@
 #define StatusBarHeight     (Application.statusBarHidden ? 0 : 20)
 #define NavBarHeightFor(vc) (vc.navigationController.navigationBarHidden ? 0 : (IsPad?44:(IsPortrait?44:32)))
 
+#define ThemeNavBarColor [UIColor whiteColor]
+
 #define UIColorWithRGBA(r,g,b,a) \
 [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:a]
 
@@ -385,12 +387,12 @@ typedef enum
         self.edgesForExtendedLayout = UIRectEdgeNone;
         
         previousNavigationBarColor = self.navigationController.navigationBar.barTintColor;
-        self.navigationController.navigationBar.barTintColor = [UIColor lightGrayColor];
+        self.navigationController.navigationBar.barTintColor = ThemeNavBarColor;
     }
     else
     {
         previousNavigationBarColor = self.navigationController.navigationBar.tintColor;
-        self.navigationController.navigationBar.tintColor = [UIColor lightGrayColor];
+        self.navigationController.navigationBar.tintColor = ThemeNavBarColor;
     }
     
     // Prepare clearView
@@ -880,7 +882,7 @@ typedef enum
 -(void)prepareTopBar
 {
     topBar = [[UIView alloc] initWithFrame:CGRectMake(0, 0, ScreenWidth, 44)];
-    topBar.backgroundColor = [UIColor lightGrayColor];
+    topBar.backgroundColor = ThemeNavBarColor;
     
     backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     backBtn.imageEdgeInsets = UIEdgeInsetsMake(4, 8, 4, 14);
@@ -1615,7 +1617,7 @@ typedef enum
     [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader
                                        withReuseIdentifier:AvailableAssetsCollectionHeader
                                               forIndexPath:indexPath];
-    headerVw.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.6f];
+    headerVw.backgroundColor = UIColorWithRGBA(236, 236, 236, 1);
     
     UILabel* albumNameLbl = (UILabel*)[headerVw viewWithTag:12345];
     if(albumNameLbl == nil)
@@ -1624,7 +1626,7 @@ typedef enum
                         CGRectInset(headerVw.bounds, 10, IsPad?5:2)];
         albumNameLbl.backgroundColor = [UIColor clearColor];
         albumNameLbl.textAlignment = NSTextAlignmentLeft;
-        albumNameLbl.textColor = [UIColor lightGrayColor];
+        albumNameLbl.textColor = UIColorWithRGBA(70, 70, 70, 1);
         albumNameLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:14.0f];
         albumNameLbl.adjustsFontSizeToFitWidth = YES;
         albumNameLbl.minimumScaleFactor = 0.75f;
