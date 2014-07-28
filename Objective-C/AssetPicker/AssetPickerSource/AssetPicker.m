@@ -46,6 +46,7 @@
 #define TabBarHeight        (IsPad?56:49)
 
 #define ThemeNavBarColor [UIColor whiteColor]
+#define FontWithSize(s)  [UIFont systemFontOfSize:s]
 
 #define UIColorWithRGBA(r,g,b,a) \
 [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:a]
@@ -496,7 +497,7 @@ typedef enum
         
         backBtn.frame = CGRectMake((IsPad?3:0), (topBarHeight-30)/2, 36, 30);
         filterBtn.frame = CGRectMake((IsPad?60:40), (topBarHeight-30)/2, 30, 30);
-        titleLbl.frame = CGRectMake((newWidth-titleLblWidth)/2, (topBarHeight-38)/2, titleLblWidth, 38);
+        titleLbl.frame = CGRectMake((newWidth-titleLblWidth)/2, (topBarHeight-40)/2, titleLblWidth, 40);
         cameraBtn.frame = CGRectMake((newWidth-(IsPad?90:(isPortrait?71:80))), (topBarHeight-30)/2, 30, 30);
         doneBtn.frame = CGRectMake((newWidth-(IsPad?40:(isPortrait?34:40))), (topBarHeight-30)/2, 33, 30);
         
@@ -938,7 +939,7 @@ typedef enum
     titleLbl.backgroundColor = [UIColor clearColor];
     titleLbl.textAlignment = NSTextAlignmentCenter;
     titleLbl.textColor = UIColorWithRGBA(38, 38, 38, 1);
-    titleLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:16.0f];
+    titleLbl.font = FontWithSize(16.0f);
     titleLbl.numberOfLines = 0;
     
     cameraBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -956,7 +957,7 @@ typedef enum
     
     backBtn.frame = CGRectMake((IsPad?3:0), 7, 36, 30);
     filterBtn.frame = CGRectMake((IsPad?60:40), 7, 30, 30);
-    titleLbl.frame = CGRectMake((ScreenWidth-titleLblWidth)/2, 3, titleLblWidth, 38);
+    titleLbl.frame = CGRectMake((ScreenWidth-titleLblWidth)/2, 2, titleLblWidth, 40);
     cameraBtn.frame = CGRectMake((ScreenWidth-(IsPad?90:(IsPortrait?71:80))), 7, 30, 30);
     doneBtn.frame = CGRectMake((ScreenWidth-(IsPad?40:(IsPortrait?34:40))), 7, 33, 30);
     
@@ -1046,7 +1047,7 @@ typedef enum
     writingFilesMessageLbl.backgroundColor = [UIColor clearColor];
     writingFilesMessageLbl.textAlignment = NSTextAlignmentCenter;
     writingFilesMessageLbl.textColor = [UIColor darkGrayColor];
-    writingFilesMessageLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:16.0f];
+    writingFilesMessageLbl.font = FontWithSize(16.0f);
     writingFilesMessageLbl.text = @"Writing files for your convenience!\n It won't take long...";
     writingFilesMessageLbl.numberOfLines = 0;
     [loadingShield addSubview:writingFilesMessageLbl];
@@ -1284,7 +1285,7 @@ typedef enum
             UILabel* cameraOptionLbl = [[UILabel alloc]
                                         initWithFrame:CGRectMake(55, yOffset, 140, 30)];
             cameraOptionLbl.backgroundColor = [UIColor clearColor];
-            cameraOptionLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:16.0f];
+            cameraOptionLbl.font = FontWithSize(16.0f);
             cameraOptionLbl.textAlignment = NSTextAlignmentLeft;
             cameraOptionLbl.textColor = [UIColor blackColor];
             cameraOptionLbl.tag = (i*1000)+2;
@@ -1596,7 +1597,7 @@ typedef enum
         nameLbl.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.75f];
         nameLbl.textAlignment = NSTextAlignmentCenter;
         nameLbl.textColor = [UIColor darkGrayColor];
-        nameLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:IsPad?12:10];
+        nameLbl.font = FontWithSize(IsPad?12.0f:10.0f);
         nameLbl.tag = 22222;
         
         videoInfoVw = [[UIView alloc] initWithFrame:
@@ -1614,7 +1615,7 @@ typedef enum
         durationLbl.backgroundColor = [UIColor clearColor];
         durationLbl.textAlignment = NSTextAlignmentRight;
         durationLbl.textColor = [UIColor darkGrayColor];
-        durationLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:IsPad?12:10];
+        durationLbl.font = FontWithSize(IsPad?12.0f:10.0f);
         [videoInfoVw addSubview:durationLbl];
         durationLbl.tag = 44444;
         
@@ -1672,7 +1673,7 @@ typedef enum
         albumNameLbl.backgroundColor = [UIColor clearColor];
         albumNameLbl.textAlignment = NSTextAlignmentLeft;
         albumNameLbl.textColor = UIColorWithRGBA(70, 70, 70, 1);
-        albumNameLbl.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:14.0f];
+        albumNameLbl.font = FontWithSize(14.0f);
         albumNameLbl.adjustsFontSizeToFitWidth = YES;
         albumNameLbl.minimumScaleFactor = 0.75f;
         [headerVw addSubview:albumNameLbl];
