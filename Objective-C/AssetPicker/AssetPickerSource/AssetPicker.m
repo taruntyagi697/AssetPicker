@@ -150,22 +150,15 @@ typedef enum
     [super setSelected:selected];
     
     if(selected)
-    {
         selectedCheckIcon.hidden = NO;
-        self.alpha = 0.5f;
-    }
     else
-    {
         selectedCheckIcon.hidden = YES;
-        self.alpha = 1.0f;
-    }
 }
 
 -(void)setHighlighted:(BOOL)highlighted
 {
     [super setHighlighted:highlighted];
     
-    self.alpha = highlighted ? 0.5f : 1.0f;
     selectedCheckIcon.hidden = YES;
 }
 
@@ -873,9 +866,11 @@ typedef enum
                  savedPhotosAlbum[AlbumAssets] = savedPhotosAlbumAssets;
                  [availableAssets replaceObjectAtIndex:0 withObject:savedPhotosAlbum];
                  
-                 NSIndexPath* indexPath =
-                 [NSIndexPath indexPathForItem:[availableAssets[0][AlbumAssets] count]-1 inSection:0];
+                 NSIndexPath* indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
                  [availableAssetsClctnVw insertItemsAtIndexPaths:@[indexPath]];
+                 [availableAssetsClctnVw scrollToItemAtIndexPath:indexPath
+                                                atScrollPosition:UICollectionViewScrollPositionTop
+                                                        animated:YES];
                  
                  double delayInSeconds = 0.75f;
                  dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
@@ -1497,13 +1492,18 @@ typedef enum
       Any way, what's bad in writing directly to AssetsLibrary & getting assetURL in return :)
      */
     
+    [Application setNetworkActivityIndicatorVisible:YES];
     dispatch_async(assetWriteQueue, ^{
         if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
         {
-            CGImageRef imageRef = ((UIImage*)info[UIImagePickerControllerOriginalImage]).CGImage;
-            [AssetsLibrary writeImageToSavedPhotosAlbum:imageRef metadata:nil
+            UIImage* originalImage = info[UIImagePickerControllerOriginalImage];
+            ALAssetOrientation orientation = (ALAssetOrientation)originalImage.imageOrientation;
+            [AssetsLibrary writeImageToSavedPhotosAlbum:originalImage.CGImage
+                                            orientation:orientation
                                         completionBlock:^(NSURL* assetURL, NSError* error)
              {
+                 [Application setNetworkActivityIndicatorVisible:NO];
+                 
                  if(error != nil)
                  {
                      APLog(@"Couldn't Save Image. Reason :- %@", error.localizedDescription);
@@ -1523,6 +1523,8 @@ typedef enum
                 [AssetsLibrary writeVideoAtPathToSavedPhotosAlbum:videoURL
                                                   completionBlock:^(NSURL* assetURL, NSError* error)
                  {
+                     [Application setNetworkActivityIndicatorVisible:NO];
+                     
                      if(error != nil)
                      {
                          APLog(@"Couldn't Save Video. Reason :- %@", error.localizedDescription);
