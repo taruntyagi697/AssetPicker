@@ -41,14 +41,14 @@ and your work is done. AssetPicker does it all for you.
 * Provides Camera option for new photo / video capture.
 
 ## iPad Portrait
-![iPad_Portrait] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPad_Portrait.png)
+![iPadPortrait] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPadPortrait.png)
 ## iPad Landscape
-![iPad_Landscape] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPad_Landscape.png)
+![iPadLandscape] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPadLandscape.png)
 
 ## iPhone Portrait
-![iPhone_Portrait] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPhone_Portrait.png)
+![iPhonePortrait] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPhonePortrait.png)
 ## iPhone Landscape
-![iPhone_Landscape] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPhone_Landscape.png)
+![iPhoneLandscape] (https://raw.githubusercontent.com/taruntyagi697/AssetPicker/master/Screenshots/iPhoneLandscape.png)
     
 ## Demo App
     Demo app includes just the above 'How To Use' code for reference.
