@@ -150,16 +150,25 @@ typedef enum
 {
     [super setSelected:selected];
     
+    UIImageView* imgVw = (UIImageView*)[self.contentView viewWithTag:11111];
     if(selected)
+    {
+        imgVw.alpha = 0.5f;
         selectedCheckIcon.hidden = NO;
+    }
     else
+    {
+        imgVw.alpha = 1.0f;
         selectedCheckIcon.hidden = YES;
+    }
 }
 
 -(void)setHighlighted:(BOOL)highlighted
 {
     [super setHighlighted:highlighted];
     
+    UIImageView* imgVw = (UIImageView*)[self.contentView viewWithTag:11111];
+    imgVw.alpha = 1.0f;
     selectedCheckIcon.hidden = YES;
 }
 
@@ -273,7 +282,11 @@ typedef enum
     UIButton* cameraBtn;
     UIButton* doneBtn;
     
-    // Remember what was the navigationBarColor when AssetPicker launched
+    /*
+     * Remember what was the statusBarStyle & navigationBarColor
+     * when AssetPicker launched
+     */
+    UIStatusBarStyle previousStatusBarStyle;
     UIColor* previousNavigationBarColor;
     
     // TopBar - Filter Options
@@ -397,6 +410,9 @@ typedef enum
     [super viewDidLoad];
     self.view.backgroundColor = ThemeNavBarColor;
     self.navigationItem.hidesBackButton = YES;
+    
+    previousStatusBarStyle = Application.statusBarStyle;
+    [Application setStatusBarStyle:UIStatusBarStyleDefault animated:YES];
     
     if(iOSVersion >= 7.0f)
     {
@@ -759,7 +775,7 @@ typedef enum
      }];
 }
 
--(void)reloadSectionHeadersAndAnyVisibleMatchingItemUsingIndexPath:(NSIndexPath*)indexPath
+-(void)reloadAllSectionHeaders
 {
     [sectionHeaders enumerateKeysAndObjectsUsingBlock:
      ^(NSIndexPath* key, UIView* obj, BOOL *stop)
@@ -768,6 +784,11 @@ typedef enum
              [self refreshSectionHeader:obj forIndexPath:key];
          });
      }];
+}
+
+-(void)reloadSectionHeadersAndAnyVisibleMatchingItemUsingIndexPath:(NSIndexPath*)indexPath
+{
+    [self reloadAllSectionHeaders];
     
     ALAsset* targetAsset = availableAssets[indexPath.section][AlbumAssets][indexPath.row];
     
@@ -882,6 +903,8 @@ typedef enum
                      [NotificationCenter postNotificationName:ItemTappedNotification object:item];
                  });
              }
+             
+             [self reloadAllSectionHeaders];
          }
      }
                   failureBlock:^(NSError* error)
@@ -897,6 +920,8 @@ typedef enum
                      completion:^(BOOL finished){[topBar removeFromSuperview];}];
     
     [clearViewForDisablingUI removeFromSuperview];
+    
+    [Application setStatusBarStyle:previousStatusBarStyle animated:YES];
     
     if(iOSVersion >= 7.0f)
         self.navigationController.navigationBar.barTintColor = previousNavigationBarColor;
@@ -1252,7 +1277,7 @@ typedef enum
         
         cameraOptionsContainer =
         [[UIView alloc] initWithFrame:CGRectMake(CGRectGetMidX(cameraBtn.frame)-170,
-                                                 yOffset, 200, 258)];
+                                                 yOffset, 200, 218)];
         cameraOptionsContainer.backgroundColor = [UIColor clearColor];
         
         UIImageView* topArrowImgVw = [[UIImageView alloc]
