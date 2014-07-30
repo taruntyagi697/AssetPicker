@@ -73,7 +73,7 @@
 #define ItemTappedNotification     @"ItemTappedNotification"
 
 #define BytesWritten @"BytesWritten"
-#define ChunkSize    (1024*1024)
+#define ChunkSize    ((1024*1024)/4)
 
 #define AssetInfoLoadQueue @"AssetInfoLoadQueue"
 #define AssetWriteQueue    @"AssetWriteQueue"
@@ -1155,16 +1155,14 @@ typedef enum
             
             while(offset < size)
             {
-                Byte* buffer = malloc(ChunkSize);
+                uint8_t buffer[ChunkSize];
                 
                 NSInteger bytesRead = [representation getBytes:buffer fromOffset:offset
                                                         length:ChunkSize error:nil];
-                NSData* data = [NSData dataWithBytesNoCopy:buffer length:bytesRead];
+                NSData* data = [NSData dataWithBytes:buffer length:bytesRead];
                 [fileHandle writeData:data];
                 
                 offset += bytesRead;
-                free(buffer);
-                
                 totalBytesWritten += bytesRead;
                 
                 dispatch_async(dispatch_get_main_queue(), ^{
