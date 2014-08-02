@@ -17,11 +17,18 @@
 * QuartzCore.Framework
 * AssetsLibrary.Framework
 
+## Installation
+* Like CocoaPods, just add this to your podfile-
+```
+pod 'AssetPicker'
+```
+* Want the source directly, just copy the AssetPicker folder (Art & Source).
+
 ## How To Use
 
 Configuring AssetPicker is just like this :
-
-	[AssetPicker showAssetPickerIn:self.navigationController
+```objective-c
+[AssetPicker showAssetPickerIn:self.navigationController
                  completionHandler:^(AssetPicker* picker, NSArray* assets)
      {
          NSLog(@"Assets --> %@", assets);
@@ -35,7 +42,7 @@ Configuring AssetPicker is just like this :
      {
          NSLog(@"Cancelled.");
      }];
-
+```
 and your work is done. AssetPicker does it all for you.
 * It uses AssetsLibrary to fetch Albums Info, populates it into a nice UI.
 * Provides all the albums browsing within one screen.
