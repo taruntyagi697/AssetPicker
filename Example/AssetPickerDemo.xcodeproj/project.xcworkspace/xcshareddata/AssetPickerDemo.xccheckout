@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>0A62F9E5-E05F-42A8-9E2A-8AE9D21F983E</string>
+	<key>IDESourceControlProjectName</key>
+	<string>AssetPickerDemo</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>950E093D-DAC7-4119-B3F5-C21E6ABD70AE</key>
+		<string>https://github.com/taruntyagi697/AssetPicker.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Example/AssetPickerDemo.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>950E093D-DAC7-4119-B3F5-C21E6ABD70AE</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/taruntyagi697/AssetPicker.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>950E093D-DAC7-4119-B3F5-C21E6ABD70AE</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>950E093D-DAC7-4119-B3F5-C21E6ABD70AE</string>
+			<key>IDESourceControlWCCName</key>
+			<string>AssetPicker</string>
+		</dict>
+	</array>
+</dict>
+</plist>
