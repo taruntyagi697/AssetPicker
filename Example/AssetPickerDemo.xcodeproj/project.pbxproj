@@ -10,7 +10,6 @@
 		AA03F9EC197FFBEF00B0FA2B /* APNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = AA03F9EB197FFBEF00B0FA2B /* APNavigationController.m */; };
 		AA345112198D051B006C5D01 /* AssetPickerArt.bundle in Resources */ = {isa = PBXBuildFile; fileRef = AA345111198D051B006C5D01 /* AssetPickerArt.bundle */; };
 		AA34B8CB198CF11B00113C2A /* AssetPicker.m in Sources */ = {isa = PBXBuildFile; fileRef = AA34B8BF198CF11B00113C2A /* AssetPicker.m */; };
-		AA3CA734198CFA460092383B /* AssetPicker.podspec in Resources */ = {isa = PBXBuildFile; fileRef = AA3CA733198CFA460092383B /* AssetPicker.podspec */; };
 		AA5258B0197853F3003ECED5 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5258AF197853F3003ECED5 /* AssetsLibrary.framework */; };
 		AA9DD301196D948C003488D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA9DD300196D948C003488D1 /* Foundation.framework */; };
 		AA9DD303196D948C003488D1 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA9DD302196D948C003488D1 /* CoreGraphics.framework */; };
@@ -48,7 +47,6 @@
 		AA345111198D051B006C5D01 /* AssetPickerArt.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = AssetPickerArt.bundle; sourceTree = "<group>"; };
 		AA34B8BE198CF11B00113C2A /* AssetPicker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AssetPicker.h; sourceTree = "<group>"; };
 		AA34B8BF198CF11B00113C2A /* AssetPicker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AssetPicker.m; sourceTree = "<group>"; };
-		AA3CA733198CFA460092383B /* AssetPicker.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = AssetPicker.podspec; path = ../AssetPicker.podspec; sourceTree = "<group>"; };
 		AA5258AF197853F3003ECED5 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		AA9DD2FD196D948C003488D1 /* AssetPickerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AssetPickerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA9DD300196D948C003488D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -115,7 +113,6 @@
 		AA9DD2F4196D948C003488D1 = {
 			isa = PBXGroup;
 			children = (
-				AA3CA733198CFA460092383B /* AssetPicker.podspec */,
 				AAA19498197B1C1C00C7EF21 /* LICENSE.md */,
 				AAA19499197B1C1C00C7EF21 /* README.md */,
 				AA045EA2198CE05800E6465A /* AssetPicker */,
@@ -276,7 +273,6 @@
 				AA345112198D051B006C5D01 /* AssetPickerArt.bundle in Resources */,
 				AA9DD314196D948C003488D1 /* Main_iPhone.storyboard in Resources */,
 				AA9DD30B196D948C003488D1 /* InfoPlist.strings in Resources */,
-				AA3CA734198CFA460092383B /* AssetPicker.podspec in Resources */,
 				AAA1949B197B1C1C00C7EF21 /* README.md in Resources */,
 				AAA1949A197B1C1C00C7EF21 /* LICENSE.md in Resources */,
 			);
