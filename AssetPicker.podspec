@@ -27,11 +27,10 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = "6.0"
 
   s.source       = { :git => "https://github.com/taruntyagi697/AssetPicker.git", :tag => "v1.0.1" }
-
   
-  s.source_files  = "AssetPicker/*.{h,m}"
+  s.source_files  = "AssetPicker"
 
-  s.resources = "AssetPicker/*.png"
+  s.resource = "AssetPicker/AssetPickerArt.bundle"
 
   s.frameworks = "AssetsLibrary", "QuartzCore"
 
