@@ -51,7 +51,7 @@
 #define UIColorWithRGBA(r,g,b,a) \
 [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:a]
 
-#define Image(i) [UIImage imageNamed:FormatString(@"AssetPickerArt.bundle/%@",i)]
+#define Image(i) [UIImage imageNamed:i]
 
 #define FormatString(format, ...) [NSString stringWithFormat:format, ##__VA_ARGS__]
 
