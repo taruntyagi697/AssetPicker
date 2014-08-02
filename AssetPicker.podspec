@@ -29,9 +29,9 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/taruntyagi697/AssetPicker.git", :tag => "v1.0.1" }
 
   
-  s.source_files  = "AssetPicker/**/*.{h,m}"
+  s.source_files  = "AssetPicker/*.{h,m}"
 
-  s.resources = "AssetPicker/**/*.png"
+  s.resources = "AssetPicker/*.png"
 
   s.frameworks = "AssetsLibrary", "QuartzCore"
 
