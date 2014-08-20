@@ -121,9 +121,9 @@ typedef enum
 {
     if(self = [super initWithFrame:frame])
     {
-        CGFloat iconSize = IsPad?30:20;
+        CGFloat iconSize = IsPad?20:14;
         selectedCheckIcon = [[UIImageView alloc] initWithFrame:
-                             CGRectMake(0, 0, iconSize, iconSize)];
+                             CGRectMake(2, 2, iconSize, iconSize)];
         selectedCheckIcon.image = Image(@"ap_check.png");
         [self addSubview:selectedCheckIcon];
         
@@ -645,11 +645,11 @@ typedef enum
 
 -(void)addAvailableAssetsCollectionView
 {
-    CGFloat size = IsPad?140:96;
-    CGFloat padding = 10;
+    CGFloat size = IsPad?140:76;
+    CGFloat padding = IsPad?10:5;
     
     UICollectionViewFlowLayout* layout = [UICollectionViewFlowLayout new];
-    layout.minimumLineSpacing = IsPad?10:6;
+    layout.minimumLineSpacing = IsPad?10:2;
     layout.minimumInteritemSpacing = 0;
     layout.itemSize = CGSizeMake(size, size);
     layout.scrollDirection = UICollectionViewScrollDirectionVertical;
@@ -729,38 +729,44 @@ typedef enum
 -(void)refreshSectionHeader:(UIView*)headerVw forIndexPath:(NSIndexPath*)indexPath
 {
     NSDictionary* albumInfo = availableAssets[indexPath.section];
-    NSArray* albumAssets = albumInfo[AlbumAssets];
     
-    NSInteger filteredMatches = 0;
+    NSInteger selectedPhotosCount = 0;
+    NSInteger selectedVideosCount = 0;
+    NSMutableArray* storedAlbumAssets = storedAssets[indexPath.section][AlbumAssets];
     for(ALAsset* selAsset in selectedAssets) {
-        for(ALAsset* albumAsset in albumAssets) {
+        for(ALAsset* albumAsset in storedAlbumAssets) {
             if([selAsset isEqualToAsset:albumAsset]) {
-                filteredMatches++;
+                NSString* assetTypeStr = [selAsset valueForProperty:ALAssetPropertyType];
+                if([assetTypeStr isEqualToString:ALAssetTypePhoto])
+                    selectedPhotosCount++;
+                else if([assetTypeStr isEqualToString:ALAssetTypeVideo])
+                    selectedVideosCount++;
+                
                 break;
             }
         }
     }
     
-    NSInteger totalMatches = 0;
-    if(filterType == APFilterTypeAll) {
-        totalMatches = filteredMatches;
-    } else {
-        NSMutableArray* storedAlbumAssets = storedAssets[indexPath.section][AlbumAssets];
-        for(ALAsset* selAsset in selectedAssets) {
-            for(ALAsset* albumAsset in storedAlbumAssets) {
-                if([selAsset isEqualToAsset:albumAsset]) {
-                    totalMatches++;
-                    break;
-                }
-            }
-        }
-    }
-    
     UILabel* albumNameLbl = (UILabel*)[headerVw viewWithTag:12345];
-    albumNameLbl.text = [NSString stringWithFormat:
-                         @"%@ (%d) - %d Selected - Total %d Selected",
-                         albumInfo[AlbumName], [albumInfo[AlbumAssets] count],
-                         filteredMatches, totalMatches];
+    if([albumInfo[AlbumName] isEqualToString:@"Saved Photos"] ||
+       [albumInfo[AlbumName] isEqualToString:@"Camera Roll"])
+    {
+        NSString* photosStr = (selectedPhotosCount == 1) ? @"Photo" : @"Photos";
+        NSString* videosStr = (selectedVideosCount == 1) ? @"Video" : @"Videos";
+        
+        albumNameLbl.text = [NSString stringWithFormat:
+                             @"%@ (%d) - (%d %@ + %d %@) Selected",
+                             albumInfo[AlbumName], [albumInfo[AlbumAssets] count],
+                             selectedPhotosCount, photosStr, selectedVideosCount, videosStr];
+    }
+    else
+    {
+        NSString* itemsStr = ((selectedPhotosCount+selectedVideosCount) == 1) ? @"Item" : @"Items";
+        albumNameLbl.text = [NSString stringWithFormat:
+                             @"%@ (%d) - %d %@ Selected",
+                             albumInfo[AlbumName], [albumInfo[AlbumAssets] count],
+                             (selectedPhotosCount+selectedVideosCount), itemsStr];
+    }
 }
 
 -(void)reloadAllSectionHeaderLabelWidthsForScreenWidth:(CGFloat)newWidth
@@ -1301,6 +1307,7 @@ typedef enum
             UIButton* pointerBtn = [UIButton buttonWithType:UIButtonTypeCustom];
             pointerBtn.frame = CGRectMake(5, yOffset, 42, 30);
             [pointerBtn setImage:Image(@"ap_pointer.png") forState:UIControlStateNormal];
+            [pointerBtn setImageEdgeInsets:UIEdgeInsetsMake(5, 5, 5, 5)];
             [pointerBtn addTarget:self action:@selector(pointerTapped:)
                  forControlEvents:UIControlEventTouchUpInside];
             pointerBtn.tag = (i*1000)+1;
@@ -1601,9 +1608,11 @@ typedef enum
     cell.backgroundColor = [UIColor clearColor];
     
     UIImageView* imgVw = (UIImageView*)[cell.contentView viewWithTag:11111];
-    UILabel* nameLbl = (UILabel*)[cell.contentView viewWithTag:22222];
-    UIView* videoInfoVw = [cell.contentView viewWithTag:33333];
-    UILabel* durationLbl = (UILabel*)[videoInfoVw viewWithTag:44444];
+    UIView* videoInfoVw = [cell.contentView viewWithTag:22222];
+    UILabel* durationLbl = (UILabel*)[videoInfoVw viewWithTag:33333];
+    
+    CGFloat cellSize = cell.bounds.size.width;
+    CGFloat bannerHeight = IsPad?20:15;
     
     if(imgVw == nil)
     {
@@ -1612,38 +1621,32 @@ typedef enum
         imgVw.backgroundColor = [UIColor clearColor];
         imgVw.tag = 11111;
         
-        CGFloat cellSize = cell.bounds.size.width;
-        CGFloat bannerHeight = IsPad?20:15;
-        
-        nameLbl = [[UILabel alloc] initWithFrame:
-                   CGRectMake(0, cellSize-bannerHeight, cellSize, bannerHeight)];
-        nameLbl.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.75f];
-        nameLbl.textAlignment = NSTextAlignmentCenter;
-        nameLbl.textColor = [UIColor darkGrayColor];
-        nameLbl.font = FontWithSize(IsPad?12.0f:10.0f);
-        nameLbl.tag = 22222;
-        
         videoInfoVw = [[UIView alloc] initWithFrame:
-                       CGRectMake(0, cellSize-2*bannerHeight, cellSize, bannerHeight)];
-        videoInfoVw.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.75f];
-        videoInfoVw.tag = 33333;
+                       CGRectMake(0, cellSize-bannerHeight, cellSize, bannerHeight)];
+        videoInfoVw.backgroundColor = [UIColor clearColor];
+        videoInfoVw.tag = 22222;
+        
+        CAGradientLayer* layer = [CAGradientLayer layer];
+        layer.colors = @[(__bridge UIColor*)[UIColor colorWithWhite:0.0 alpha:0.0].CGColor,
+                         (__bridge UIColor*)[UIColor blackColor].CGColor];
+        layer.frame = videoInfoVw.bounds;
+        [videoInfoVw.layer addSublayer:layer];
         
         UIImageView* videoIconImgVw = [[UIImageView alloc] initWithFrame:
-                                       CGRectMake(2, IsPad?2:1, IsPad?22:17, IsPad?16:12)];
-        videoIconImgVw.image = Image(@"ap_video.png");
+                                       CGRectMake(5, 2, bannerHeight-5, bannerHeight-5)];
+        videoIconImgVw.image = Image(@"ap_play.png");
         [videoInfoVw addSubview:videoIconImgVw];
         
         durationLbl = [[UILabel alloc] initWithFrame:
-                       CGRectMake(30, 0, cellSize-32, bannerHeight)];
+                       CGRectMake(bannerHeight+5, 0, cellSize-(bannerHeight+10), bannerHeight)];
         durationLbl.backgroundColor = [UIColor clearColor];
         durationLbl.textAlignment = NSTextAlignmentRight;
-        durationLbl.textColor = [UIColor darkGrayColor];
+        durationLbl.textColor = [UIColor whiteColor];
         durationLbl.font = FontWithSize(IsPad?12.0f:10.0f);
         [videoInfoVw addSubview:durationLbl];
-        durationLbl.tag = 44444;
+        durationLbl.tag = 33333;
         
         [cell.contentView addSubview:imgVw];
-        [cell.contentView addSubview:nameLbl];
         [cell.contentView addSubview:videoInfoVw];
     }
     
@@ -1652,8 +1655,16 @@ typedef enum
     {
         [cell setSelected:[selectedAssets containsAsset:asset]];
         
-        imgVw.image = [UIImage imageWithCGImage:[asset aspectRatioThumbnail]];
-        nameLbl.text = [[asset defaultRepresentation] filename];
+        UIImage* image = [UIImage imageWithCGImage:
+                          (IsPad? [asset aspectRatioThumbnail] : [asset thumbnail])];
+        imgVw.image = image;
+        
+        if(IsPad)
+        {
+            float fitImageHeight = image.size.height * cellSize/image.size.width;
+            videoInfoVw.frame = CGRectMake(0, cellSize-((cellSize-fitImageHeight)/2)-bannerHeight,
+                                           cellSize, bannerHeight);
+        }
         
         if([[asset valueForProperty:ALAssetPropertyType] isEqualToString:ALAssetTypeVideo])
         {

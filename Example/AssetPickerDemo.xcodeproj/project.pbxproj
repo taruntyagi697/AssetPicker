@@ -39,6 +39,7 @@
 		AAA1949A197B1C1C00C7EF21 /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AAA19498197B1C1C00C7EF21 /* LICENSE.md */; };
 		AAA1949B197B1C1C00C7EF21 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AAA19499197B1C1C00C7EF21 /* README.md */; };
 		AAAAB84F196E401C00ABCE9C /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAAAB84E196E401C00ABCE9C /* QuartzCore.framework */; };
+		AACCEA1E19A4703C00D470AF /* ap_play.png in Resources */ = {isa = PBXBuildFile; fileRef = AACCEA1D19A4703C00D470AF /* ap_play.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +92,7 @@
 		AAA19498197B1C1C00C7EF21 /* LICENSE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE.md; path = ../LICENSE.md; sourceTree = "<group>"; };
 		AAA19499197B1C1C00C7EF21 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		AAAAB84E196E401C00ABCE9C /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		AACCEA1D19A4703C00D470AF /* ap_play.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ap_play.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +131,7 @@
 				AA345119198D0A04006C5D01 /* ap_loading.png */,
 				AA34511A198D0A04006C5D01 /* ap_options.png */,
 				AA34511B198D0A04006C5D01 /* ap_photo.png */,
+				AACCEA1D19A4703C00D470AF /* ap_play.png */,
 				AA34511C198D0A04006C5D01 /* ap_pointer.png */,
 				AA34511D198D0A04006C5D01 /* ap_take_a_shot.png */,
 				AA34511E198D0A04006C5D01 /* ap_up_arrow.png */,
@@ -299,6 +302,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA345126198D0A04006C5D01 /* ap_photo.png in Resources */,
+				AACCEA1E19A4703C00D470AF /* ap_play.png in Resources */,
 				AA345129198D0A04006C5D01 /* ap_up_arrow.png in Resources */,
 				AA345124198D0A04006C5D01 /* ap_loading.png in Resources */,
 				AA9DD317196D948C003488D1 /* Main_iPad.storyboard in Resources */,

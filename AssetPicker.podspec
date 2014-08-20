@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "AssetPicker"
-  s.version      = "1.2"
+  s.version      = "1.3"
   s.summary      = "AssetPicker is a UIViewController subclass that provides an alternative solution to UIImagePickerController."
 
   s.description  = "AssetPicker is a UIViewController subclass that provides an alternative solution to standard UIImagePickerController. Highlights are :-
@@ -26,7 +26,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = "6.0"
 
-  s.source       = { :git => "https://github.com/taruntyagi697/AssetPicker.git", :tag => "v1.2" }
+  s.source       = { :git => "https://github.com/taruntyagi697/AssetPicker.git", :tag => "v1.3" }
   
   s.source_files  = "AssetPicker/*.{h,m}"
   
