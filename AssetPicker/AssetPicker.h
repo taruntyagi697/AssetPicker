@@ -54,6 +54,16 @@ extern const NSString* APAssetType;
 extern const NSString* APAssetTypePhoto;
 extern const NSString* APAssetTypeVideo;
 
+//Asset SelectionLimit Trackers
+extern NSUInteger maximumPhotosAllowed;
+extern NSUInteger selectedPhotosCount;
+
+extern NSUInteger maximumVideosAllowed;
+extern NSUInteger selectedVideosCount;
+
+extern NSUInteger maximumAssetsAllowed;
+extern NSUInteger selectedAssetsCount;
+
 /*
  * Completion (Done) & Failure (Cancel) Blocks
  */
@@ -71,6 +81,7 @@ typedef void (^APCancelHandler)(AssetPicker* picker);
  * get callbacks for Completion or Failure blocks.
  * By default, it considers only NavigationBar, not TabBar
  * It calls the latter method with considersTabBar:NO
+ * By Default, maximumLimit is 5 each for Photos, Videos.
  */
 +(void)showAssetPickerIn:(UINavigationController*)navigationController
        completionHandler:(APCompletionHandler)completion
@@ -87,6 +98,72 @@ typedef void (^APCancelHandler)(AssetPicker* picker);
        completionHandler:(APCompletionHandler)completion
            cancelHandler:(APCancelHandler)cancel;
 
+#pragma mark - PHOTOS only -
+/*
+ * Want to impose a maximumLimit on number of photos, use this
+ * For TabBar Variant of this, use latter one
+ */
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
+#pragma mark - VIDEOS only -
+/*
+ * Want to impose a maximumLimit on number of videos, use this
+ * For TabBar Variant of this, use latter one
+ */
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedVideos:(NSUInteger)videosCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedVideos:(NSUInteger)videosCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
+#pragma mark - PHOTOS+VIDEOS -
+/*
+ * Want to impose a maximumLimit on number of Photos & Videos independently, use this
+ * For TabBar Variant of this, use latter one
+ */
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+    maximumAllowedVideos:(NSUInteger)videosCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+    maximumAllowedVideos:(NSUInteger)videosCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
+/*
+ * Want to impose a maximumLimit on number of Assets(Photos+Videos), use this
+ * For TabBar Variant of this, use latter one
+ */
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedAssets:(NSUInteger)assetsCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedAssets:(NSUInteger)assetsCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel;
+
+#pragma mark - Clear Local Copies For Assets -
 /*
  * Class helper to clear disk memory claimed
  * while selecting assets.

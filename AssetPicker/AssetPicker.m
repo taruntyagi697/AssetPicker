@@ -83,6 +83,10 @@
 
 #define CameraReturnedAssetWritten @"CameraReturnedAssetWritten"
 
+#define DefaultMaximumPhotos 5
+#define DefaultMaximumVideos 5
+#define DefaultMaximumAssets (DefaultMaximumPhotos+DefaultMaximumVideos)
+
 // External Variables' DEFINITIONS
 const NSString* APOriginalAsset = @"APOriginalAsset";
 const NSString* APAssetContentsURL = @"APAssetContentsURL";
@@ -90,6 +94,16 @@ const NSString* APAssetContentsURL = @"APAssetContentsURL";
 const NSString* APAssetType = @"APAssetType";
 const NSString* APAssetTypePhoto = @"APAssetTypePhoto";
 const NSString* APAssetTypeVideo = @"APAssetTypeVideo";
+
+//Asset SelectionLimit Trackers
+NSUInteger maximumPhotosAllowed;
+NSUInteger selectedPhotosCount;
+
+NSUInteger maximumVideosAllowed;
+NSUInteger selectedVideosCount;
+
+NSUInteger maximumAssetsAllowed;
+NSUInteger selectedAssetsCount;
 
 // Filter type
 typedef enum
@@ -109,10 +123,20 @@ typedef enum
 #pragma mark<@interface APAvailableAssetsCollectionItem>
 #pragma mark
 
+typedef enum
+{
+    APCollectionCellTypeInvalid = 0,
+    APCollectionCellTypePhoto,
+    APCollectionCellTypeVideo
+}APCollectionCellType;
+
 @interface APAvailableAssetsCollectionItem : UICollectionViewCell
 {
-    UIImageView* selectedCheckIcon;
+    
 }
+@property(nonatomic,assign)APCollectionCellType type;
+@property(nonatomic,strong)UIImageView* selectedCheckIcon;
+
 @end
 
 @implementation APAvailableAssetsCollectionItem
@@ -122,12 +146,12 @@ typedef enum
     if(self = [super initWithFrame:frame])
     {
         CGFloat iconSize = IsPad?20:14;
-        selectedCheckIcon = [[UIImageView alloc] initWithFrame:
-                             CGRectMake(2, 2, iconSize, iconSize)];
-        selectedCheckIcon.image = Image(@"ap_check.png");
-        [self addSubview:selectedCheckIcon];
+        _selectedCheckIcon = [[UIImageView alloc] initWithFrame:
+                              CGRectMake(2, 2, iconSize, iconSize)];
+        _selectedCheckIcon.image = Image(@"ap_check.png");
+        [self addSubview:_selectedCheckIcon];
         
-        selectedCheckIcon.hidden = YES;
+        _selectedCheckIcon.hidden = YES;
         
         for(UIGestureRecognizer* gr in self.gestureRecognizers)
             [self removeGestureRecognizer:gr];
@@ -142,7 +166,83 @@ typedef enum
 
 -(void)itemTapped:(UITapGestureRecognizer*)tapRecognizer
 {
+    if((selectedAssetsCount == maximumAssetsAllowed ||
+        selectedPhotosCount == maximumPhotosAllowed ||
+        selectedVideosCount == maximumVideosAllowed) && !self.selected)
+    {
+        NSString* title = @"Maximum Limit Reached!";
+        NSString* message = @"";
+        NSString* photoStr = (maximumPhotosAllowed != 1) ? @"Photos" : @"Photo";
+        NSString* videoStr = (maximumVideosAllowed != 1) ? @"Videos" : @"Video";
+        
+        if((selectedAssetsCount == maximumAssetsAllowed) ||
+           
+           (selectedPhotosCount == maximumPhotosAllowed &&
+            maximumAssetsAllowed > maximumPhotosAllowed &&
+            self.type == APCollectionCellTypePhoto) ||
+           
+           (selectedVideosCount == maximumVideosAllowed &&
+            maximumAssetsAllowed > maximumVideosAllowed &&
+            self.type == APCollectionCellTypeVideo))
+        {
+            if(maximumPhotosAllowed == 0 && maximumVideosAllowed == 0)
+            {
+                NSString* assetsStr = (maximumAssetsAllowed != 1) ? @"Assets" : @"Asset";
+                message = [NSString stringWithFormat:
+                           @"You can only select a maximum of %d %@ at a time.",
+                           maximumAssetsAllowed, assetsStr];
+            }
+            else
+            {
+                message = [NSString stringWithFormat:
+                           @"You can only select a maximum of %d %@ & %d %@ at a time.",
+                           maximumPhotosAllowed, photoStr, maximumVideosAllowed, videoStr];
+            }
+        }
+        else if(selectedPhotosCount == maximumPhotosAllowed &&
+                maximumAssetsAllowed == maximumPhotosAllowed &&
+                self.type == APCollectionCellTypePhoto)
+        {
+            message = [NSString stringWithFormat:
+                       @"You can only select a maximum of %d %@ at a time.",
+                       maximumPhotosAllowed, photoStr];
+        }
+        else if(selectedVideosCount == maximumVideosAllowed &&
+                maximumAssetsAllowed == maximumVideosAllowed &&
+                self.type == APCollectionCellTypeVideo)
+        {
+            message = [NSString stringWithFormat:
+                       @"You can only select a maximum of %d %@ at a time.",
+                       maximumVideosAllowed, videoStr];
+        }
+        
+        if([message length] > 0)
+        {
+            [[[UIAlertView alloc] initWithTitle:title message:message delegate:nil
+                              cancelButtonTitle:@"Okay" otherButtonTitles:nil] show];
+            
+            return;
+        }
+    }
+    
     self.selected = !self.selected;
+    
+    if(self.selected)
+    {
+        if(self.type == APCollectionCellTypePhoto)
+            selectedPhotosCount++;
+        else
+            selectedVideosCount++;
+    }
+    else
+    {
+        if(self.type == APCollectionCellTypePhoto)
+            selectedPhotosCount--;
+        else
+            selectedVideosCount--;
+    }
+    selectedAssetsCount = selectedPhotosCount+selectedVideosCount;
+    
     [NotificationCenter postNotificationName:ItemTappedNotification object:self];
 }
 
@@ -154,12 +254,12 @@ typedef enum
     if(selected)
     {
         imgVw.alpha = 0.5f;
-        selectedCheckIcon.hidden = NO;
+        _selectedCheckIcon.hidden = NO;
     }
     else
     {
         imgVw.alpha = 1.0f;
-        selectedCheckIcon.hidden = YES;
+        _selectedCheckIcon.hidden = YES;
     }
 }
 
@@ -169,7 +269,7 @@ typedef enum
     
     UIImageView* imgVw = (UIImageView*)[self.contentView viewWithTag:11111];
     imgVw.alpha = 1.0f;
-    selectedCheckIcon.hidden = YES;
+    _selectedCheckIcon.hidden = YES;
 }
 
 @end
@@ -367,21 +467,162 @@ typedef enum
        completionHandler:(APCompletionHandler)completion
            cancelHandler:(APCancelHandler)cancel
 {
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:DefaultMaximumPhotos
+              maximumAllowedVideos:DefaultMaximumVideos
+              maximumAllowedAssets:DefaultMaximumAssets
+                   considersTabBar:isInTabBarController
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:photosCount
+                   considersTabBar:NO
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:photosCount
+              maximumAllowedVideos:0
+              maximumAllowedAssets:photosCount
+                   considersTabBar:isInTabBarController
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedVideos:(NSUInteger)videosCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedVideos:videosCount
+                   considersTabBar:NO
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedVideos:(NSUInteger)videosCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:0
+              maximumAllowedVideos:videosCount
+              maximumAllowedAssets:videosCount
+                   considersTabBar:isInTabBarController
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+    maximumAllowedVideos:(NSUInteger)videosCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:photosCount
+              maximumAllowedVideos:videosCount
+                   considersTabBar:NO
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+    maximumAllowedVideos:(NSUInteger)videosCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:photosCount
+              maximumAllowedVideos:videosCount
+              maximumAllowedAssets:photosCount+videosCount
+                   considersTabBar:isInTabBarController
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedAssets:(NSUInteger)assetsCount
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedAssets:assetsCount
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedAssets:(NSUInteger)assetsCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
+    return [self showAssetPickerIn:navigationController
+              maximumAllowedPhotos:0
+              maximumAllowedVideos:0
+              maximumAllowedAssets:assetsCount
+                   considersTabBar:isInTabBarController
+                 completionHandler:completion
+                     cancelHandler:cancel];
+}
+
++(void)showAssetPickerIn:(UINavigationController*)navigationController
+    maximumAllowedPhotos:(NSUInteger)photosCount
+    maximumAllowedVideos:(NSUInteger)videosCount
+    maximumAllowedAssets:(NSUInteger)assetsCount
+         considersTabBar:(BOOL)isInTabBarController
+       completionHandler:(APCompletionHandler)completion
+           cancelHandler:(APCancelHandler)cancel
+{
     AssetPicker* picker = [[AssetPicker alloc] initWithCompletionHandler:completion
                                                            cancelHandler:cancel
-                                                         considersTabBar:isInTabBarController];
+                                                         considersTabBar:isInTabBarController
+                                                    maximumAllowedPhotos:photosCount
+                                                    maximumAllowedVideos:videosCount
+                                                    maximumAllowedAssets:photosCount+videosCount];
     [navigationController pushViewController:picker animated:YES];
 }
 
 -(id)initWithCompletionHandler:(APCompletionHandler)completion
                  cancelHandler:(APCancelHandler)cancel
                considersTabBar:(BOOL)isInTabBarController
+          maximumAllowedPhotos:(NSUInteger)photosCount
+          maximumAllowedVideos:(NSUInteger)videosCount
+          maximumAllowedAssets:(NSUInteger)assetsCount
 {
     if(self = [super init])
     {
         apCompletion = completion;
         apCancel = cancel;
         isContainedInTabBarController = isInTabBarController;
+        
+        maximumPhotosAllowed = photosCount;
+        maximumVideosAllowed = videosCount;
+        maximumAssetsAllowed = assetsCount;
+        
+        selectedPhotosCount = 0;
+        selectedVideosCount = 0;
+        selectedAssetsCount = 0;
         
         storedAssets = [@[] mutableCopy];
         availableAssets = [@[] mutableCopy];
@@ -810,61 +1051,6 @@ typedef enum
     }
 }
 
-/*-(void)refreshSavedPhotosAlbumAssets
-{
-    [AssetsLibrary enumerateGroupsWithTypes:ALAssetsGroupSavedPhotos
-                                 usingBlock:^(ALAssetsGroup* group, BOOL* stop)
-     {
-         if(group != nil)
-         {
-             if([group numberOfAssets] > [storedAssets[0][AlbumAssets] count])
-             {
-                 [group enumerateAssetsWithOptions:NSEnumerationReverse
-                                        usingBlock:^(ALAsset* result, NSUInteger index, BOOL* stop)
-                  {
-                      if(result != nil)
-                      {
-                          *stop = YES;
-                          [selectedAssets addAsset:result];
-                          [storedAssets[0][AlbumAssets] addObject:result];
-                          
-                          NSString* assetType = [result valueForProperty:ALAssetPropertyType];
-                          
-                          if((filterType == APFilterTypeAll) ||
-                             ([assetType isEqualToString:ALAssetTypePhoto] && filterType == APFilterTypePhotos) ||
-                             ([assetType isEqualToString:ALAssetTypeVideo] && filterType == APFilterTypeVideos))
-                          {
-                              [availableAssets[0][AlbumAssets] addObject:result];
-                              
-                              NSIndexPath* indexPath =
-                              [NSIndexPath indexPathForItem:[availableAssets[0][AlbumAssets] count]-1 inSection:0];
-                              [availableAssetsClctnVw insertItemsAtIndexPaths:@[indexPath]];
-                              
-                              double delayInSeconds = 0.75f;
-                              dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-                              dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-                                  APAvailableAssetsCollectionItem* item = (APAvailableAssetsCollectionItem*)
-                                  [availableAssetsClctnVw cellForItemAtIndexPath:indexPath];
-                                  item.selected = YES;
-                                  [NotificationCenter postNotificationName:ItemTappedNotification object:item];
-                              });
-                          }
-                      }
-                  }];
-             }
-             else
-             {
-                 [self performSelector:_cmd withObject:nil afterDelay:2.0f];
-             }
-         }
-     }
-                               failureBlock:^(NSError* error)
-     {
-         APLog(@"AssetLibrary Group 'SavedPhotos' couldn't be browsed at the time."
-               " Reason :- %@", error.localizedDescription);
-     }];
-}*/
-
 -(void)refreshSavedPhotosAddAssetWithURL:(NSURL*)assetURL
 {
     [AssetsLibrary assetForURL:assetURL
@@ -997,6 +1183,17 @@ typedef enum
     [topBar addSubview:titleLbl];
     [topBar addSubview:cameraBtn];
     [topBar addSubview:doneBtn];
+    
+    if(maximumPhotosAllowed > 0 && maximumAssetsAllowed == maximumPhotosAllowed)
+    {
+        filterType = APFilterTypePhotos;
+        filterBtn.hidden = YES;
+    }
+    else if(maximumVideosAllowed > 0 && maximumAssetsAllowed == maximumVideosAllowed)
+    {
+        filterType = APFilterTypeVideos;
+        filterBtn.hidden = YES;
+    }
     
     titleLbl.text = @"Select Photos/Videos From Library";
     
@@ -1247,14 +1444,6 @@ typedef enum
           [NSValue valueWithCATransform3D:CATransform3DMakeRotation(M_PI*0.99, 0, 0, 1)]];
         animateTransform.keyTimes = @[@0.0,@1.0];
         [loadingImgVw.layer addAnimation:animateTransform forKey:nil];
-        
-        /*[UIView animateWithDuration:0.75
-                              delay:0.0
-                            options:UIViewAnimationOptionRepeat
-                         animations:
-         ^{loadingImgVw.transform = CGAffineTransformRotate(loadingImgVw.transform, M_PI*0.99);}
-                         completion:
-         ^(BOOL finished){}];*/
     }
 }
 
@@ -1495,34 +1684,6 @@ typedef enum
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
     
-    // Used selector '@selector(refreshSavedPhotosAlbumAssets)' unknowingly
-     /*dispatch_async(dispatch_get_main_queue(), ^{
-        if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
-        {
-            UIImageWriteToSavedPhotosAlbum(info[UIImagePickerControllerOriginalImage],
-                                           self, @selector(refreshSavedPhotosAlbumAssets),
-                                           CameraReturnedAssetWritten);
-        }
-        else
-        {
-            NSString* videoPath = ((NSURL*)info[UIImagePickerControllerMediaURL]).path;
-            if(UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoPath))
-            {
-                UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self,
-                                                    @selector(refreshSavedPhotosAlbumAssets),
-                                                    CameraReturnedAssetWritten);
-            }
-        }
-    });*/
-    /* Got weird crash
-      "Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[NSInvocation setArgument:atIndex:]: index (2) out of bounds [-1, 1]"
-      Googling it got me the reason, should've used following, missed them !
-      - (void)image:(UIImage*)image didFinishSavingWithError:(NSError*)error contextInfo:(void*)contextInfo
-      - (void)video:(NSString*)videoPath didFinishSavingWithError:(NSError*)error contextInfo:(void*)contextInfo
-     
-      Any way, what's bad in writing directly to AssetsLibrary & getting assetURL in return :)
-     */
-    
     [Application setNetworkActivityIndicatorVisible:YES];
     dispatch_async(assetWriteQueue, ^{
         if([info[UIImagePickerControllerMediaType] isEqualToString:@"public.image"])
@@ -1661,7 +1822,24 @@ typedef enum
         
         if(IsPad)
         {
-            float fitImageHeight = image.size.height * cellSize/image.size.width;
+            float fitImageWidth = 0.0f;
+            float fitImageHeight = 0.0f;
+            if(image.size.width < image.size.height)
+            {
+                fitImageWidth = image.size.width * cellSize/image.size.height;
+                fitImageHeight = image.size.height * fitImageWidth/image.size.width;
+            }
+            else
+            {
+                fitImageHeight = image.size.height * cellSize/image.size.width;
+                fitImageWidth = image.size.width * fitImageHeight/image.size.height;
+            }
+            
+            CGFloat iconSize = IsPad?20:14;
+            cell.selectedCheckIcon.frame = CGRectMake(((cellSize-fitImageWidth)/2)+2,
+                                                      ((cellSize-fitImageHeight)/2)+2,
+                                                      iconSize, iconSize);
+            
             videoInfoVw.frame = CGRectMake(0, cellSize-((cellSize-fitImageHeight)/2)-bannerHeight,
                                            cellSize, bannerHeight);
         }
@@ -1669,6 +1847,7 @@ typedef enum
         if([[asset valueForProperty:ALAssetPropertyType] isEqualToString:ALAssetTypeVideo])
         {
             videoInfoVw.hidden = NO;
+            cell.type = APCollectionCellTypeVideo;
             
             NSInteger duration = ceil([[asset valueForProperty:
                                         ALAssetPropertyDuration] doubleValue]);
@@ -1683,6 +1862,7 @@ typedef enum
         else
         {
             videoInfoVw.hidden = YES;
+            cell.type = APCollectionCellTypePhoto;
         }
     }
     
@@ -1740,25 +1920,6 @@ typedef enum
     
     [self reloadSectionHeadersAndAnyVisibleMatchingItemUsingIndexPath:indexPath];
 }
-
-/*-(void)collectionView:(UICollectionView*)collectionView didSelectItemAtIndexPath:(NSIndexPath*)indexPath
-{
-    ALAsset* asset = availableAssets[indexPath.section][AlbumAssets][indexPath.row];
-    [selectedAssets addAsset:asset];
-    [self reloadSectionHeadersAndAnyVisibleMatchingItemUsingIndexPath:indexPath];
-}
-
--(BOOL)collectionView:(UICollectionView*)collectionView shouldDeselectItemAtIndexPath:(NSIndexPath*)indexPath
-{
-    return YES;
-}
-
--(void)collectionView:(UICollectionView*)collectionView didDeselectItemAtIndexPath:(NSIndexPath*)indexPath
-{
-    ALAsset* asset = availableAssets[indexPath.section][AlbumAssets][indexPath.row];
-    [selectedAssets removeAsset:asset];
-    [self reloadSectionHeadersAndAnyVisibleMatchingItemUsingIndexPath:indexPath];
-}*/
 
 -(void)collectionView:(UICollectionView*)collectionView didEndDisplayingSupplementaryView:(UICollectionReusableView*)view forElementOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath*)indexPath
 {

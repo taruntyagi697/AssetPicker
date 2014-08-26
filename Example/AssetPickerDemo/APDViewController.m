@@ -33,6 +33,8 @@
 -(IBAction)goToAssetPickerBtnAction:(UIButton*)sender
 {
     [AssetPicker showAssetPickerIn:self.navigationController
+              maximumAllowedPhotos:4
+              maximumAllowedVideos:4
                  completionHandler:^(AssetPicker* picker, NSArray* assets)
      {
          NSLog(@"Assets --> %@", assets);

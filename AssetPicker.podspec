@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "AssetPicker"
-  s.version      = "1.3"
+  s.version      = "1.4"
   s.summary      = "AssetPicker is a UIViewController subclass that provides an alternative solution to UIImagePickerController."
 
   s.description  = "AssetPicker is a UIViewController subclass that provides an alternative solution to standard UIImagePickerController. Highlights are :-
@@ -14,7 +14,8 @@ Pod::Spec.new do |s|
                     * Uses Blocks for completion & cancel (Maintains integrity of code)
                     * Provides original ALAsset in returned response. (Better use it's properties)
                     * Provides ContentsURL for both Photos & Videos. (No UIImage directly, memory issues with multiple selection)
-                    * Considers standard TabBarHeight and leaves space for that if set YES."
+                    * Considers standard TabBarHeight and leaves space for that if set YES.
+                    * Set Maximum Limits Independently on Photos, Videos, Assets."
 
   s.homepage     = "https://github.com/taruntyagi697/AssetPicker"
   
@@ -26,7 +27,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = "6.0"
 
-  s.source       = { :git => "https://github.com/taruntyagi697/AssetPicker.git", :tag => "v1.3" }
+  s.source       = { :git => "https://github.com/taruntyagi697/AssetPicker.git", :tag => "v1.4" }
   
   s.source_files  = "AssetPicker/*.{h,m}"
   
